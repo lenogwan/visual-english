@@ -9,51 +9,63 @@ export default function Navbar() {
   const { user, logout } = useAuth()
 
   return (
-    <nav className="bg-white shadow-md sticky top-0 z-50">
+    <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-indigo-100 shadow-sm">
       <div className="max-w-6xl mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl">👁️</span>
-            <span className="font-bold text-xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+        <div className="flex items-center justify-between h-20">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+              <span className="text-xl">👁️</span>
+            </div>
+            <span className="font-extrabold text-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent tracking-tight">
               Visual English
             </span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-6">
-            <Link href="/" className="text-gray-700 hover:text-purple-600 font-medium transition-colors">
+          <div className="hidden md:flex items-center gap-8">
+            <Link href="/" className="text-slate-600 hover:text-indigo-600 font-semibold transition-all hover:scale-105">
               Home
             </Link>
-            <Link href="/learn" className="text-gray-700 hover:text-purple-600 font-medium transition-colors">
-              Learn Words
+            <Link href="/learn" className="text-slate-600 hover:text-indigo-600 font-semibold transition-all hover:scale-105">
+              Learn
             </Link>
             {user && (
-              <Link href="/quiz" className="text-gray-700 hover:text-purple-600 font-medium transition-colors">
+              <Link href="/quiz" className="text-slate-600 hover:text-indigo-600 font-semibold transition-all hover:scale-105">
                 Quizzes
               </Link>
             )}
-            <Link href="/practice" className="text-gray-700 hover:text-purple-600 font-medium transition-colors">
+            <Link href="/practice" className="text-slate-600 hover:text-indigo-600 font-semibold transition-all hover:scale-105">
               Practice
             </Link>
             
+            <div className="h-6 w-px bg-slate-200 mx-2" />
+
             {user ? (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-6">
                 {(user.role === 'Admin' || user.role === 'admin' || user.role === 'Teacher' || user.role === 'teacher') && (
-                  <Link href="/admin" className="text-sm text-purple-600 hover:text-purple-700 font-medium">
+                  <Link href="/admin" className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl font-bold hover:bg-indigo-100 transition-colors">
                     Admin
                   </Link>
                 )}
-                <span className="text-sm text-gray-600">{user.email}</span>
+                <div className="flex flex-col items-end">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">
+                    {user.role}
+                  </span>
+                  <span className="text-sm font-semibold text-slate-700 leading-tight">{user.email}</span>
+                </div>
                 <button
                   onClick={logout}
-                  className="text-sm text-gray-700 hover:text-purple-600 font-medium"
+                  className="p-2 text-slate-500 hover:text-red-500 transition-colors"
+                  title="Logout"
                 >
-                  Logout
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
                 </button>
               </div>
             ) : (
               <Link
                 href="/login"
-                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+                className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all hover:-translate-y-0.5"
               >
                 Login
               </Link>
@@ -62,9 +74,9 @@ export default function Navbar() {
 
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+            className="md:hidden p-2 rounded-xl hover:bg-slate-100 transition-colors"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {menuOpen ? (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               ) : (
@@ -75,21 +87,23 @@ export default function Navbar() {
         </div>
 
           {menuOpen && (
-            <div className="md:hidden pb-4">
-              <Link href="/" className="block py-2 text-gray-700 hover:text-purple-600">Home</Link>
-              <Link href="/learn" className="block py-2 text-gray-700 hover:text-purple-600">Learn Words</Link>
+            <div className="md:hidden py-6 space-y-4 animate-fadeIn">
+              <Link href="/" className="block px-4 py-2 text-slate-700 font-bold hover:text-indigo-600">Home</Link>
+              <Link href="/learn" className="block px-4 py-2 text-slate-700 font-bold hover:text-indigo-600">Learn</Link>
               {user && (
-                <Link href="/quiz" className="block py-2 text-gray-700 hover:text-purple-600">Quizzes</Link>
+                <Link href="/quiz" className="block px-4 py-2 text-slate-700 font-bold hover:text-indigo-600">Quizzes</Link>
               )}
-              <Link href="/practice" className="block py-2 text-gray-700 hover:text-purple-600">Practice</Link>
-              {user ? (
-                <>
-                  <span className="block py-2 text-sm text-gray-600">{user.email}</span>
-                  <button onClick={logout} className="block py-2 text-gray-700 hover:text-purple-600">Logout</button>
-                </>
-              ) : (
-                <Link href="/login" className="block py-2 text-purple-600 font-medium">Login</Link>
-              )}
+              <Link href="/practice" className="block px-4 py-2 text-slate-700 font-bold hover:text-indigo-600">Practice</Link>
+              <div className="border-t border-slate-100 pt-4 px-4">
+                {user ? (
+                  <div className="flex flex-col gap-4">
+                    <span className="text-sm font-semibold text-slate-600">{user.email}</span>
+                    <button onClick={logout} className="text-red-500 font-bold">Logout</button>
+                  </div>
+                ) : (
+                  <Link href="/login" className="block py-3 text-center bg-indigo-600 text-white rounded-xl font-bold">Login</Link>
+                )}
+              </div>
             </div>
           )}
       </div>

@@ -113,16 +113,22 @@ export default function QuizPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl text-gray-600">Loading...</div>
+      <div className="min-h-screen relaxed-bg flex items-center justify-center">
+        <div className="flex flex-col items-center gap-6">
+          <div className="w-16 h-16 border-4 border-indigo-400/20 border-t-indigo-400 rounded-full animate-spin"></div>
+          <div className="text-xl font-black text-indigo-200 tracking-widest animate-pulse">SYNCING COSMIC DATA...</div>
+        </div>
       </div>
     )
   }
 
   if (!quiz) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl text-gray-600">Quiz not found</div>
+      <div className="min-h-screen relaxed-bg flex items-center justify-center">
+        <div className="glass-card p-10 rounded-3xl border border-white/10 text-center">
+          <p className="text-2xl text-indigo-200 font-bold italic">Quiz lost in the nebula</p>
+          <button onClick={() => router.push('/quiz')} className="mt-6 px-8 py-3 bg-indigo-600 text-white rounded-xl font-black text-sm uppercase tracking-widest">Return to Base</button>
+        </div>
       </div>
     )
   }
@@ -130,23 +136,35 @@ export default function QuizPage() {
   const currentWord = quiz.words[currentIndex]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-8 px-4">
+    <div className="min-h-screen bg-slate-50 py-12 px-6">
       <div className="max-w-2xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">{quiz.title}</h1>
-          <button onClick={() => router.push('/quiz')} className="text-gray-600">
-            ← Quit
+        <div className="flex justify-between items-center mb-10">
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">{quiz?.title}</h1>
+          <button 
+            onClick={() => router.push('/quiz')} 
+            className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-500 rounded-xl text-xs font-black uppercase tracking-widest border border-indigo-100 transition-all font-bold"
+          >
+            ← QUIT
           </button>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-md">
-          <div className="text-sm text-gray-500 mb-4">
-            Question {currentIndex + 1} of {quiz.words.length}
+        <div className="bg-white rounded-[2.5rem] p-10 border border-indigo-100 shadow-2xl relative overflow-hidden">
+          {/* Progress Bar */}
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-slate-100">
+            <div 
+              className="h-full bg-indigo-600 transition-all duration-500"
+              style={{ width: `${((currentIndex + 1) / (quiz?.words.length || 1)) * 100}%` }}
+            />
           </div>
 
-          {quiz.type === 'image-to-word' && (
-            <div className="mb-6">
-              <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden mb-4 flex items-center justify-center">
+          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8 flex justify-between items-center">
+            <span>QUESTION {currentIndex + 1} OF {quiz?.words.length}</span>
+            <span className="text-indigo-600">{Math.round(((currentIndex + 1) / (quiz?.words.length || 1)) * 100)}% COMPLETE</span>
+          </div>
+
+          {quiz?.type === 'image-to-word' && (
+            <div className="mb-10">
+              <div className="aspect-video bg-indigo-50 rounded-3xl overflow-hidden mb-8 border border-indigo-100 shadow-inner flex items-center justify-center">
                 {currentWord.images[0] ? (
                   <img
                     src={currentWord.images[0]}
@@ -154,41 +172,48 @@ export default function QuizPage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="text-gray-400">No image available</div>
+                  <div className="text-slate-400 font-bold italic">Visual Data Missing</div>
                 )}
               </div>
-              <input
-                type="text"
-                value={answers[currentIndex] || ''}
-                onChange={(e) => handleAnswer(e.target.value)}
-                placeholder="Type the word..."
-                disabled={submitted}
-                className="w-full p-3 border rounded-xl text-lg text-center"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={answers[currentIndex] || ''}
+                  onChange={(e) => handleAnswer(e.target.value)}
+                  placeholder="IDENTIFY WORD..."
+                  disabled={submitted}
+                  className="w-full p-6 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none focus:ring-8 focus:ring-indigo-400/5 text-slate-900 placeholder-slate-300 transition-all text-2xl font-black text-center tracking-widest uppercase"
+                />
+              </div>
             </div>
           )}
 
-          {quiz.type === 'word-to-image' && (
-            <div className="mb-6">
-              <div className="text-center mb-4">
-                <h2 className="text-3xl font-bold text-gray-800">{currentWord.word}</h2>
-                <p className="text-gray-500">{currentWord.phonetic}</p>
+          {quiz?.type === 'word-to-image' && (
+            <div className="mb-10">
+              <div className="text-center mb-10">
+                <h2 className="text-5xl font-black text-slate-900 mb-4 tracking-tighter uppercase">{currentWord.word}</h2>
+                <p className="text-xl text-slate-500 font-medium tracking-wide">[{currentWord.phonetic || '...'}]</p>
               </div>
-              <p className="text-center text-gray-600 mb-4">Select the correct image:</p>
-              <div className="grid grid-cols-2 gap-4">
+              <p className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Select Visual Match:</p>
+              <div className="grid grid-cols-2 gap-6">
                 {quiz.words.slice(0, 4).map((w, idx) => (
                   <button
                     key={idx}
-                    onClick={() => handleAnswer(w.word)}
+                    onClick={() => {
+                        setSelectedImage(idx);
+                        handleAnswer(w.word);
+                    }}
                     disabled={submitted}
-                    className={`aspect-video rounded-xl overflow-hidden border-2 transition-all ${
-                      selectedImage === idx ? 'border-purple-500' : 'border-transparent'
+                    className={`aspect-video rounded-3xl overflow-hidden border-4 transition-all duration-500 shadow-xl ${
+                      selectedImage === idx 
+                        ? 'border-indigo-500 scale-[1.02] shadow-indigo-500/20 shadow-lg' 
+                        : 'border-slate-100 hover:border-indigo-200 grayscale hover:grayscale-0'
                     }`}
                   >
                     {w.images[0] ? (
                       <img src={w.images[0]} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">No image</div>
+                      <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-300 font-bold italic">No Image</div>
                     )}
                   </button>
                 ))}
@@ -197,62 +222,79 @@ export default function QuizPage() {
           )}
 
           {quiz.type === 'fill-blank' && (
-            <div className="mb-6">
-              <div className="text-center mb-4">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">Translate or fill in:</h2>
-                <p className="text-lg text-gray-600">{currentWord.scenario || currentWord.word}</p>
+            <div className="mb-10">
+              <div className="text-center mb-8">
+                <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Complete the Context:</h2>
+                <div className="bg-indigo-50 rounded-3xl p-8 border border-indigo-100 mb-8">
+                  <p className="text-2xl text-slate-800 font-medium leading-relaxed italic">
+                      "{currentWord.scenario || currentWord.word}"
+                  </p>
+                </div>
               </div>
-              <input
-                type="text"
-                value={answers[currentIndex] || ''}
-                onChange={(e) => handleAnswer(e.target.value)}
-                placeholder="Type your answer..."
-                disabled={submitted}
-                className="w-full p-3 border rounded-xl text-lg text-center"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={answers[currentIndex] || ''}
+                  onChange={(e) => handleAnswer(e.target.value)}
+                  placeholder="IDENTIFY WORD..."
+                  disabled={submitted}
+                  className="w-full p-6 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none focus:ring-8 focus:ring-indigo-400/5 text-slate-900 placeholder-slate-300 transition-all text-2xl font-black text-center tracking-widest uppercase"
+                />
+              </div>
             </div>
           )}
 
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center pt-8 border-t border-slate-100">
             <button
               onClick={prevQuestion}
               disabled={currentIndex === 0}
-              className="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50"
+              className="px-8 py-4 bg-white border border-indigo-100 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all disabled:opacity-20 disabled:cursor-not-allowed"
             >
-              ← Previous
+              ← BACK
             </button>
             {currentIndex < quiz.words.length - 1 ? (
               <button
                 onClick={nextQuestion}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg"
+                className="px-10 py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all"
               >
-                Next →
+                NEXT →
               </button>
             ) : (
               <button
                 onClick={submitQuiz}
                 disabled={submitted}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg font-medium"
+                className="px-10 py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all disabled:opacity-50"
               >
-                Submit Quiz
+                SUBMIT ATTEMPT
               </button>
             )}
           </div>
         </div>
 
         {submitted && results && (
-          <div className="mt-6 bg-white rounded-2xl p-6 shadow-md text-center">
-            <h2 className="text-2xl font-bold mb-2">Quiz Complete!</h2>
-            <p className="text-4xl font-bold text-purple-600 mb-2">
-              {results.score}/{results.total}
-            </p>
-            <p className="text-gray-600 mb-4">{results.percentage}% correct</p>
-            <button
-              onClick={() => router.push('/quiz')}
-              className="px-6 py-2 bg-purple-600 text-white rounded-lg"
-            >
-              Back to Quizzes
-            </button>
+          <div className="mt-10 bg-white rounded-[2.5rem] p-12 border border-indigo-100 shadow-2xl text-center relative overflow-hidden animate-fadeIn">
+            <div className="relative z-10">
+              <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-8">Simulation Complete</h2>
+              <div className="relative inline-block mb-8">
+                <p className="text-8xl font-black text-slate-900 relative">
+                  {results.score}<span className="text-3xl text-slate-300 font-bold -ml-2">/{results.total}</span>
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-2 mb-10">
+                 {[...Array(5)].map((_, i) => (
+                    <span key={i} className={`text-2xl ${i < Math.round((results.percentage / 100) * 5) ? 'text-yellow-400' : 'text-slate-100'}`}>★</span>
+                 ))}
+              </div>
+              <p className="text-xl text-slate-500 font-medium mb-12 italic leading-relaxed">
+                "{results.percentage}% accuracy achieved in cosmic simulation."
+              </p>
+              <button
+                onClick={() => router.push('/quiz')}
+                className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-lg shadow-indigo-100"
+              >
+                BACK TO QUIZZES
+              </button>
+            </div>
           </div>
         )}
       </div>

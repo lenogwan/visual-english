@@ -10,7 +10,8 @@ async function getAuth(request: NextRequest) {
   const token = authHeader.slice(7)
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: string }
-    return decoded
+    const user = await prisma.user.findUnique({ where: { id: decoded.userId } })
+    return user
   } catch {
     return null
   }
@@ -72,7 +73,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const auth = await getAuth(request)
-    if (!auth) {
+    if (!auth || auth.role?.toLowerCase() !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -107,7 +108,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const auth = await getAuth(request)
-    if (!auth) {
+    if (!auth || auth.role?.toLowerCase() !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

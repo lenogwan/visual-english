@@ -20,7 +20,7 @@ async function getAuth(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const auth = await getAuth(request)
-    if (!auth || auth.role !== 'admin') {
+    if (!auth || (auth.role.toLowerCase() !== 'admin' && auth.role.toLowerCase() !== 'teacher')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

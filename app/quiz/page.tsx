@@ -59,56 +59,76 @@ export default function QuizListPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl text-gray-600">Loading...</div>
+      <div className="min-h-screen relaxed-bg flex items-center justify-center">
+        <div className="flex flex-col items-center gap-6">
+          <div className="w-16 h-16 border-4 border-indigo-400/20 border-t-indigo-400 rounded-full animate-spin"></div>
+          <div className="text-xl font-black text-indigo-200 tracking-widest animate-pulse">PREPARING QUIZZES...</div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-8 px-4">
+    <div className="min-h-screen bg-slate-50 py-12 px-6">
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Quizzes</h1>
+        <div className="flex justify-between items-end mb-12">
+          <div>
+            <h1 className="text-5xl font-black text-slate-900 mb-2 tracking-tighter">Quizzes</h1>
+            <p className="text-slate-500 font-bold text-xs uppercase tracking-widest ml-1">Test your cosmic vocabulary</p>
+          </div>
           {canCreate && (
             <button
               onClick={() => router.push('/quiz/create')}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700"
+              className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 transition-all active:scale-95 tracking-widest shadow-lg shadow-indigo-100"
             >
-              + Create Quiz
+              + CREATE QUIZ
             </button>
           )}
         </div>
 
         {quizzes.length === 0 ? (
-          <div className="text-center text-gray-600 py-12">
-            No quizzes available yet.
+          <div className="bg-white/60 rounded-3xl p-20 text-center border border-indigo-100 shadow-xl">
+            <p className="text-2xl text-slate-400 font-medium italic">
+              There are no quizzes available yet.
+            </p>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2">
             {quizzes.map((quiz) => (
               <div
                 key={quiz.id}
-                className="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+                className="bg-white group rounded-[2.5rem] p-8 border border-indigo-50 shadow-xl hover:shadow-2xl hover:translate-y-[-4px] transition-all duration-500 cursor-pointer relative overflow-hidden"
                 onClick={() => router.push(`/quiz/${quiz.id}`)}
               >
-                <div className="flex justify-between items-start mb-2">
-                  <h2 className="text-xl font-bold text-gray-800">{quiz.title}</h2>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    quiz.type === 'image-to-word' ? 'bg-orange-100 text-orange-700' :
-                    quiz.type === 'word-to-image' ? 'bg-blue-100 text-blue-700' :
-                    'bg-green-100 text-green-700'
-                  }`}>
-                    {quiz.type === 'image-to-word' ? 'Image→Word' :
-                     quiz.type === 'word-to-image' ? 'Word→Image' : 'Fill Blank'}
-                  </span>
-                </div>
-                {quiz.description && (
-                  <p className="text-gray-600 mb-3">{quiz.description}</p>
-                )}
-                <div className="flex justify-between items-center text-sm text-gray-500">
-                  <span>{quiz.wordIds.length} words</span>
-                  <span>By {quiz.createdBy.name || quiz.createdBy.email}</span>
+                {/* Background glow effect on hover */}
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/0 via-purple-50/0 to-pink-50/0 group-hover:from-indigo-50/10 group-hover:via-purple-50/10 group-hover:to-pink-50/10 transition-all duration-500" />
+                
+                <div className="relative z-10">
+                  <div className="flex justify-between items-start mb-4">
+                    <h2 className="text-2xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{quiz.title}</h2>
+                  </div>
+                  <div className="mb-6 flex gap-2">
+                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-white shadow-md ${
+                      quiz.type === 'image-to-word' ? 'bg-indigo-600' :
+                      quiz.type === 'word-to-image' ? 'bg-purple-600' :
+                      'bg-pink-600'
+                    }`}>
+                      {quiz.type === 'image-to-word' ? 'Image→Word' :
+                       quiz.type === 'word-to-image' ? 'Word→Image' : 'Fill Blank'}
+                    </span>
+                  </div>
+                  {quiz.description && (
+                    <p className="text-slate-500 font-medium mb-8 line-clamp-2 leading-relaxed text-sm">{quiz.description}</p>
+                  )}
+                  <div className="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-widest pt-6 border-t border-indigo-50">
+                    <span className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-sm"></span>
+                      {quiz.wordIds.length} words
+                    </span>
+                    <span className="flex items-center gap-2 text-indigo-600">
+                      {quiz.createdBy.name || quiz.createdBy.email.split('@')[0]}
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}

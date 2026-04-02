@@ -1,19 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-
-interface Word {
-  id: string
-  word: string
-  phonetic: string | null
-  meaning: string | null
-  images: string[]
-  tags: string[]
-  examples: string[]
-}
-
-const LEVELS = ['All', 'A1', 'A2', 'B1']
-const TOPICS = ['All', 'General', 'food', 'travel', 'animals', 'technology', 'business', 'health', 'sports', 'education', 'entertainment']
+import { useAuth } from '@/lib/auth-context'
+import { useRouter } from 'next/navigation'
 
 interface Word {
   id: string
@@ -28,7 +17,12 @@ interface Word {
   emotionalConnection?: string | null
 }
 
+const LEVELS = ['ANY', 'A1', 'A2', 'B1']
+const TOPICS = ['ANY', 'General', 'food', 'travel', 'animals', 'technology', 'business', 'health', 'sports', 'education', 'entertainment']
+
 export default function PracticePage() {
+  const router = useRouter()
+  const { user } = useAuth()
   const [words, setWords] = useState<Word[]>([])
   const [loading, setLoading] = useState(true)
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -36,20 +30,26 @@ export default function PracticePage() {
   const [score, setScore] = useState({ correct: 0, total: 0 })
   const [streak, setStreak] = useState(0)
   const [maxStreak, setMaxStreak] = useState(0)
+  const [lives, setLives] = useState(3)
   const [mode, setMode] = useState<'image-to-word' | 'word-to-image'>('image-to-word')
   const [options, setOptions] = useState<string[]>([])
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null)
-  const [level, setLevel] = useState('All')
-  const [topic, setTopic] = useState('All')
+  const [level, setLevel] = useState('ANY')
+  const [topic, setTopic] = useState('ANY')
   const [isShaking, setIsShaking] = useState(false)
   const [showPulse, setShowPulse] = useState(false)
 
   const fetchWords = useCallback(async () => {
     setLoading(true)
     setScore({ correct: 0, total: 0 })
+    setLives(3)
     try {
-      const res = await fetch(`/api/words?level=${level}&topic=${topic}&limit=50`)
+      // Corrected "ANY" logic to "All" for API compatibility if needed, 
+      // but assuming the API handles it or we'll map it here.
+      const apiLevel = level === 'ANY' ? 'All' : level
+      const apiTopic = topic === 'ANY' ? 'All' : topic
+      const res = await fetch(`/api/words?level=${apiLevel}&topic=${apiTopic}&limit=50`)
       const data = await res.json()
       setWords(data.words || [])
       setCurrentIndex(0)
@@ -69,7 +69,7 @@ export default function PracticePage() {
 
   const currentWord = words[currentIndex]
 
-  const generateOptions = (correctWord: Word) => {
+  const generateOptions = useCallback((correctWord: Word) => {
     const wrongWords = words
       .filter((w) => w.word !== correctWord.word)
       .sort(() => Math.random() - 0.5)
@@ -77,7 +77,7 @@ export default function PracticePage() {
       .map((w) => w.word)
     const allOptions = [...wrongWords, correctWord.word].sort(() => Math.random() - 0.5)
     setOptions(allOptions)
-  }
+  }, [words])
 
   useEffect(() => {
     if (currentWord) {
@@ -86,10 +86,10 @@ export default function PracticePage() {
       setSelectedAnswer(null)
       setIsCorrect(null)
     }
-  }, [currentWord, mode])
+  }, [currentWord, mode, generateOptions])
 
   const handleAnswer = (answer: string) => {
-    if (showAnswer || !currentWord) return
+    if (showAnswer || !currentWord || lives <= 0) return
     setSelectedAnswer(answer)
     const correct = answer === currentWord.word
     
@@ -104,29 +104,28 @@ export default function PracticePage() {
       })
       setShowPulse(true)
       setTimeout(() => setShowPulse(false), 1000)
+      setScore((prev) => ({
+        correct: prev.correct + 1,
+        total: prev.total + 1,
+      }))
     } else {
       setStreak(0)
       setIsShaking(true)
+      setLives(prev => Math.max(0, prev - 1))
       setTimeout(() => setIsShaking(false), 500)
+      setScore((prev) => ({
+        ...prev,
+        total: prev.total + 1,
+      }))
     }
-
-    setScore((prev) => ({
-      correct: prev.correct + (correct ? 1 : 0),
-      total: prev.total + 1,
-    }))
   }
 
   const nextWord = () => {
     if (currentIndex < words.length - 1) {
       setCurrentIndex(currentIndex + 1)
     } else {
-      setCurrentIndex(0)
+      setCurrentIndex(0) // Loop back or reshuffle
     }
-  }
-
-  const handleFilterChange = (newLevel: string, newTopic: string) => {
-    setLevel(newLevel)
-    setTopic(newTopic)
   }
 
   const playSound = (text: string) => {
@@ -140,10 +139,10 @@ export default function PracticePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4 animate-bounce">🎮</div>
-          <p className="text-xl text-orange-600 font-bold">Loading your game...</p>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-6">
+          <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
+          <div className="text-xl font-bold text-slate-500 tracking-wide animate-pulse uppercase">Loading Practice Arena...</div>
         </div>
       </div>
     )
@@ -151,265 +150,324 @@ export default function PracticePage() {
 
   if (words.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50 py-8 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">Practice Mode</h1>
-          <p className="text-gray-600 mb-8">No words found. Try a different level or topic!</p>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <div className="glass-card rounded-[3rem] p-16 text-center shadow-xl max-w-xl border border-indigo-100 bg-white/60">
+          <div className="text-8xl mb-8">📚</div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-4 uppercase">No Words Found</h1>
+          <p className="text-slate-500 mb-10 text-lg font-medium leading-relaxed">No words match your current filters. Adjust your level and topic or add more words to your library.</p>
+          <button 
+             onClick={() => { setLevel('ANY'); setTopic('ANY'); }}
+             className="px-10 py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-3xl font-bold text-xs uppercase tracking-wider shadow-lg active:scale-95 transition-all"
+          >
+            Reset Filters
+          </button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50 py-4 px-2">
-      <div className="max-w-lg mx-auto">
-        {/* Header with Score & Streaks */}
-        <div className="bg-white rounded-3xl shadow-xl p-4 mb-4 relative overflow-hidden">
-          {/* Streak Badge */}
-          {streak >= 3 && (
-            <div className="absolute top-0 right-0 bg-gradient-to-l from-orange-500 to-yellow-400 text-white px-4 py-1 rounded-bl-2xl font-black italic animate-pulse shadow-lg">
-              {streak} COMBO! 🔥
-            </div>
-          )}
-          
-          <div className="flex items-center justify-between mb-3">
-            <h1 className="text-2xl font-black text-orange-600">🎯 Practice</h1>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1">
-                <span className="text-xl">⭐</span>
-                <span className="text-xl font-bold text-orange-500">{score.correct}</span>
-              </div>
-              <div className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded-lg">
-                MAX: {maxStreak}
-              </div>
-            </div>
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 md:p-12 overflow-x-hidden">
+      <div className="max-w-4xl w-full relative z-10 animate-scaleIn">
+        
+        {/* Arena Header Stats */}
+        <div className="glass-card bg-white/80 rounded-[3rem] p-8 mb-8 border border-indigo-100 shadow-xl flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="flex items-center gap-6">
+             <div className="w-16 h-16 bg-indigo-100 rounded-3xl flex items-center justify-center text-indigo-600 shadow-md">
+                <span className="text-3xl">🎯</span>
+             </div>
+             <div>
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase leading-none mb-1">Practice Arena</h1>
+                <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Question {currentIndex + 1} of {words.length}</p>
+             </div>
           </div>
           
-          {/* Filters */}
-          <div className="flex gap-2 mb-3">
-            <select
-              value={level}
-              onChange={(e) => handleFilterChange(e.target.value, topic)}
-              className="flex-1 px-3 py-2 rounded-xl border-2 border-orange-200 bg-orange-50 text-orange-700 font-bold focus:outline-none focus:border-orange-400 transition-all cursor-pointer hover:bg-orange-100"
-            >
-              {LEVELS.map((l) => (
-                <option key={l} value={l}>{l === 'All' ? 'Any Level' : `${l} Level`}</option>
-              ))}
-            </select>
-            <select
-              value={topic}
-              onChange={(e) => handleFilterChange(level, e.target.value)}
-              className="flex-1 px-3 py-2 rounded-xl border-2 border-pink-200 bg-pink-50 text-pink-700 font-bold focus:outline-none focus:border-pink-400 transition-all cursor-pointer hover:bg-pink-100"
-            >
-              {TOPICS.map((t) => (
-                <option key={t} value={t}>{t === 'All' ? 'Any Topic' : t}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="bg-gray-100 rounded-full h-3 overflow-hidden shadow-inner">
-            <div 
-              className="h-full bg-gradient-to-r from-orange-400 via-pink-500 to-purple-600 transition-all duration-500 rounded-full"
-              style={{ width: `${score.total > 0 ? (score.correct / score.total) * 100 : 0}%` }}
-            />
+          <div className="flex items-center gap-10">
+             <div className="text-center">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Accuracy</p>
+                <p className="text-3xl font-black text-slate-800 tracking-widest">{score.total > 0 ? Math.round((score.correct / score.total) * 100) : 0}%</p>
+             </div>
+             <div className="h-12 w-px bg-slate-200" />
+             <div className="text-center">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Streak</p>
+                <div className="flex flex-col items-center">
+                  <p className="text-3xl font-black text-pink-500 tracking-widest">{streak}</p>
+                  {streak >= 3 && <span className="text-[8px] font-bold text-pink-500 animate-pulse tracking-tighter">ON FIRE!</span>}
+                </div>
+             </div>
+             <div className="h-12 w-px bg-slate-200" />
+             <div className="text-center">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Lives</p>
+                <div className="flex gap-1.5 mt-1">
+                  {[...Array(3)].map((_, i) => (
+                    <div 
+                      key={i} 
+                      className={`w-6 h-2 rounded-full transition-all duration-500 ${i < lives ? 'bg-red-500 shadow-sm' : 'bg-slate-200'}`}
+                    />
+                  ))}
+                </div>
+             </div>
           </div>
         </div>
 
-        {/* Mode Tabs */}
-        <div className="flex gap-2 mb-4">
+        {/* Global Controls */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <div className="glass-card bg-white/60 p-3 rounded-3xl border border-indigo-100 flex gap-2">
+            {LEVELS.map(l => (
+              <button
+                key={l}
+                onClick={() => setLevel(l)}
+                className={`flex-1 py-3 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all ${
+                  level === l ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-white/50'
+                }`}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
+          <div className="glass-card bg-white/60 p-3 rounded-3xl border border-indigo-100 overflow-x-auto custom-scrollbar">
+            <div className="flex gap-2 min-w-max">
+              {TOPICS.map(t => (
+                <button
+                  key={t}
+                  onClick={() => setTopic(t)}
+                  className={`px-6 py-3 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all ${
+                    topic === t ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-white/50'
+                  }`}
+                >
+                  {t === 'ANY' ? 'ALL TOPICS' : t}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Mode Selector */}
+        <div className="flex gap-4 mb-8 p-2 glass-card bg-white/80 rounded-[2rem] border border-indigo-100">
           <button
             onClick={() => setMode('image-to-word')}
-            className={`flex-1 py-3 rounded-2xl font-bold text-lg transition-all shadow-lg ${
+            className={`flex-1 py-4 rounded-[1.5rem] font-bold text-sm uppercase tracking-wider transition-all ${
               mode === 'image-to-word'
-                ? 'bg-gradient-to-r from-blue-400 to-cyan-400 text-white transform scale-105'
-                : 'bg-white text-gray-600 hover:bg-gray-100'
+                ? 'bg-indigo-600 text-white shadow-lg translate-y-[-2px]'
+                : 'text-slate-500 hover:text-indigo-600 hover:bg-indigo-50'
             }`}
           >
-            🖼️ Pick Word
+            Image → Word
           </button>
           <button
             onClick={() => setMode('word-to-image')}
-            className={`flex-1 py-3 rounded-2xl font-bold text-lg transition-all shadow-lg ${
+            className={`flex-1 py-4 rounded-[1.5rem] font-bold text-sm uppercase tracking-wider transition-all ${
               mode === 'word-to-image'
-                ? 'bg-gradient-to-r from-purple-400 to-pink-400 text-white transform scale-105'
-                : 'bg-white text-gray-600 hover:bg-gray-100'
+                ? 'bg-indigo-600 text-white shadow-lg translate-y-[-2px]'
+                : 'text-slate-500 hover:text-indigo-600 hover:bg-indigo-50'
             }`}
           >
-            📝 Pick Image
+            Word → Image
           </button>
         </div>
 
-        {/* Quiz Card */}
-        <div className={`bg-white rounded-3xl shadow-2xl overflow-hidden mb-4 transition-all duration-300 ${
-          showAnswer 
-            ? (isCorrect ? 'ring-8 ring-green-400 scale-[1.02]' : 'ring-8 ring-red-400 scale-[0.98]') 
-            : 'hover:shadow-orange-100'
-        } ${isShaking ? 'animate-[shake_0.5s_ease-in-out]' : ''} ${showPulse ? 'animate-[pulse_0.4s_ease-in-out]' : ''}`}>
-          {/* Image or Word Display */}
+        {/* Quiz Canvas */}
+        <div className={`glass-card bg-white/90 rounded-[4rem] p-8 md:p-12 border border-indigo-100 shadow-2xl relative transition-all duration-700 ${
+          lives <= 0 ? 'opacity-50 grayscale pointer-events-none' : ''
+        } ${isShaking ? 'animate-shake' : ''}`}>
+          
           {mode === 'image-to-word' ? (
-            <div className="p-4">
-              <div className="aspect-video rounded-2xl overflow-hidden bg-gray-100 mb-4">
+            <div className="space-y-10 animate-fadeIn">
+              <div className="aspect-[16/9] rounded-[3.5rem] overflow-hidden bg-slate-100 border-8 border-white group relative shadow-lg">
                 <img
                   src={currentWord.images[0]}
-                  alt="What word is this?"
-                  className="w-full h-full object-cover"
+                  alt="Word Visual"
+                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = `https://placehold.co/400x256/22c55e/ffffff?text=${encodeURIComponent(currentWord.word)}`
+                    (e.target as HTMLImageElement).src = `https://placehold.co/800x450/e2e8f0/64748b?text=Image+Missing`
                   }}
                 />
-              </div>
-              <p className="text-center text-gray-600 font-medium mb-4">
-                What English word matches this image?
-              </p>
-              <button
-                onClick={() => playSound('What word is this?')}
-                className="mx-auto block mb-3 px-4 py-2 bg-blue-100 rounded-full text-blue-600 text-sm"
-              >
-                🔊 Listen
-              </button>
-            </div>
-          ) : (
-            <div className="p-4">
-              <div className="text-center mb-4">
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent pointer-events-none" />
                 <button
-                  onClick={() => playSound(currentWord.word)}
-                  className="mb-2 px-3 py-1 bg-purple-100 rounded-full text-purple-600 text-sm"
+                  onClick={() => playSound("What is this?")}
+                  className="absolute bottom-8 left-8 bg-white/90 backdrop-blur-md border border-slate-200 text-indigo-600 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider hover:bg-white transition-all active:scale-95 shadow-md"
                 >
                   🔊 Listen
                 </button>
-                <h2 className="text-5xl font-black text-gray-800 mb-2">{currentWord.word}</h2>
-                {currentWord.phonetic && (
-                  <p className="text-xl text-gray-500">{currentWord.phonetic}</p>
-                )}
               </div>
-              <p className="text-center text-gray-600 font-medium">
-                Which image matches this word?
-              </p>
+
+              {!showAnswer ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {options.map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => handleAnswer(option)}
+                      className="py-8 rounded-[2.5rem] font-black text-2xl uppercase tracking-widest bg-white border-2 border-slate-100 text-slate-700 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 hover:-translate-y-1 active:translate-y-0 transition-all shadow-md group overflow-hidden"
+                    >
+                      <span className="relative z-10">{option}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : (
+             <div className="space-y-12 py-10 animate-fadeIn text-center">
+              <div>
+                <div className="inline-block px-5 py-2 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold mb-6 tracking-wider uppercase border border-indigo-200">
+                   Find the matching image
+                </div>
+                <h2 className="text-8xl font-black text-slate-900 tracking-tighter mb-4">{currentWord.word}</h2>
+                <div className="flex justify-center items-center gap-6">
+                   <p className="text-2xl text-slate-500 font-medium tracking-wide">{currentWord.phonetic}</p>
+                   <button 
+                    onClick={() => playSound(currentWord.word)} 
+                    className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 hover:bg-indigo-100 transition-all active:scale-90 text-xl shadow-sm"
+                   >
+                    🔊
+                   </button>
+                </div>
+              </div>
+
+              {!showAnswer ? (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 px-4">
+                  {[currentWord, ...words.filter((w) => w.word !== currentWord.word).slice(0, 3)]
+                    .sort(() => Math.random() - 0.5)
+                    .map((word, idx) => (
+                      <button
+                         key={idx}
+                         onClick={() => handleAnswer(word.word)}
+                         className="aspect-square rounded-[3rem] overflow-hidden bg-slate-100 border-4 border-white shadow-xl hover:border-indigo-400 hover:scale-105 transition-all group relative"
+                      >
+                         <img
+                           src={word.images[0]}
+                           alt=""
+                           className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-2"
+                           onError={(e) => {
+                             (e.target as HTMLImageElement).src = `https://placehold.co/300x300/e2e8f0/64748b?text=Image`
+                           }}
+                         />
+                      </button>
+                    ))}
+                </div>
+              ) : null}
             </div>
           )}
 
-          {/* Options */}
-          <div className="p-4 pt-0">
-            {mode === 'image-to-word' ? (
-              <div className="grid grid-cols-2 gap-3">
-                {options.map((option) => (
-                  <button
-                    key={option}
-                    onClick={() => handleAnswer(option)}
-                    disabled={showAnswer}
-                    className={`py-4 rounded-2xl font-bold text-xl transition-all ${
-                      showAnswer
-                        ? option === currentWord.word
-                          ? 'bg-green-500 text-white'
-                          : option === selectedAnswer
-                          ? 'bg-red-500 text-white'
-                          : 'bg-gray-100 text-gray-400'
-                        : 'bg-gradient-to-br from-gray-50 to-gray-100 hover:from-blue-50 hover:to-cyan-50 text-gray-800 shadow-md'
-                    }`}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {[currentWord, ...words.filter((w) => w.word !== currentWord.word).slice(0, 3)]
-                  .sort(() => Math.random() - 0.5)
-                  .map((word, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handleAnswer(word.word)}
-                      disabled={showAnswer}
-                      className={`rounded-2xl overflow-hidden transition-all shadow-md ${
-                        showAnswer
-                          ? word.word === currentWord.word
-                            ? 'ring-4 ring-green-500'
-                            : 'opacity-50'
-                          : 'hover:ring-4 hover:ring-purple-300'
-                      }`}
-                    >
-                      <img
-                        src={word.images[0]}
-                        alt=""
-                        className="w-full h-28 object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = `https://placehold.co/400x112/22c55e/ffffff?text=${encodeURIComponent(word.word)}`
-                        }}
-                      />
-                    </button>
-                  ))}
-              </div>
-            )}
-          </div>
-
-          {/* Feedback & Reinforcement */}
+          {/* Feedback Display */}
           {showAnswer && (
-            <div className={`p-6 border-t-2 ${isCorrect ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
-              <div className="text-center">
-                <div className="mb-4">
-                  <p className={`text-3xl font-black mb-1 ${isCorrect ? 'text-green-600' : 'text-red-600'}`}>
-                    {isCorrect ? '✨ GREAT JOB! ✨' : '💔 OH NO! 💔'}
+             <div className="mt-12 pt-12 border-t border-slate-100 animate-fadeIn">
+               <div className="text-center mb-12">
+                  <p className={`text-6xl font-black tracking-tighter mb-3 leading-none italic ${isCorrect ? 'text-emerald-500' : 'text-red-500'}`}>
+                    {isCorrect ? 'Correct!' : 'Incorrect'}
                   </p>
-                  <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">
-                    {isCorrect ? `${streak} Streak` : 'Keep practicing!'}
+                  <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">
+                     {isCorrect ? 'Great job, keep it up!' : 'Review the meaning below'}
                   </p>
-                </div>
+               </div>
 
-                {/* Vocabulary Card Detail */}
-                <div className="bg-white rounded-2xl p-4 shadow-inner mb-6 text-left border border-gray-100">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-2xl font-bold text-gray-800">{currentWord.word}</h3>
+               {/* Reinforced Vocab Detail */}
+               <div className="bg-white rounded-[3.5rem] p-10 border border-slate-100 mb-10 shadow-lg">
+                  <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-8">
+                    <div>
+                       <h3 className="text-5xl font-black text-slate-900 tracking-tighter mb-2">{currentWord.word}</h3>
+                       <div className="flex flex-wrap gap-2 mb-4">
+                         {currentWord.tags.map(t => (
+                           <span key={t} className="px-3 py-1 bg-indigo-50 rounded-full text-[10px] font-bold uppercase tracking-wider text-indigo-600 border border-indigo-100">{t}</span>
+                         ))}
+                       </div>
+                       <p className="text-slate-600 font-medium text-2xl tracking-wide line-clamp-2">{currentWord.meaning}</p>
+                    </div>
                     <button 
                       onClick={() => playSound(currentWord.word)}
-                      className="p-2 bg-blue-50 text-blue-500 rounded-full hover:bg-blue-100 transition-colors"
+                      className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center hover:bg-indigo-100 transition-all text-2xl shadow-sm cursor-pointer"
                     >
                       🔊
                     </button>
                   </div>
-                  <p className="text-orange-600 font-bold mb-3">{currentWord.meaning}</p>
                   
-                  {currentWord.exampleSentence && (
-                    <div className="mb-3 p-3 bg-gray-50 rounded-xl">
-                      <p className="text-sm font-bold text-gray-400 mb-1">EXAMPLE</p>
-                      <p className="text-gray-700 italic">"{currentWord.exampleSentence}"</p>
-                    </div>
-                  )}
+                  <div className="grid gap-4">
+                    {currentWord.exampleSentence && (
+                      <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100 relative group overflow-hidden">
+                        <div className="absolute top-0 left-0 w-1.5 h-full bg-indigo-400 group-hover:w-full transition-all duration-700 opacity-10" />
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 relative z-10">Example Sentence</p>
+                        <p className="text-slate-700 italic font-medium text-lg relative z-10 leading-relaxed">"{currentWord.exampleSentence}"</p>
+                      </div>
+                    )}
 
-                  {currentWord.scenario && (
-                    <div className="p-3 bg-blue-50 rounded-xl">
-                      <p className="text-sm font-bold text-blue-300 mb-1">MEMORY HOOK</p>
-                      <p className="text-gray-700 leading-relaxed text-sm">{currentWord.scenario}</p>
-                    </div>
-                  )}
-                </div>
+                    {(currentWord.scenario || currentWord.emotionalConnection) && (
+                      <div className="p-6 bg-indigo-50/50 rounded-[2rem] border border-indigo-100/50 relative group overflow-hidden">
+                         <div className="absolute top-0 left-0 w-1.5 h-full bg-indigo-400 group-hover:w-full transition-all duration-700 opacity-10" />
+                        <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2 relative z-10">Context & Emotion</p>
+                        <p className="text-slate-700 text-sm font-medium leading-relaxed relative z-10">
+                          {currentWord.scenario || currentWord.emotionalConnection}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+               </div>
 
-                <button
-                  onClick={() => nextWord()}
-                  className="w-full py-4 bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-2xl font-black text-xl shadow-xl hover:translate-y-[-2px] active:translate-y-[1px] transition-all flex items-center justify-center gap-3"
-                >
-                  NEXT ADVENTURE 🚀
-                </button>
-              </div>
+               <button
+                  onClick={nextWord}
+                  className="w-full py-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[3rem] font-bold text-2xl uppercase tracking-wider shadow-xl active:scale-95 transition-all"
+               >
+                  Next Question
+               </button>
             </div>
           )}
         </div>
 
+        {/* Global Progress Bar */}
+        <div className="mt-12 px-10">
+           <div className="flex justify-between items-end mb-3">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Practice Progress</span>
+              <span className="text-xs font-bold text-indigo-600 tracking-widest">{Math.round(((currentIndex + 1) / words.length) * 100)}%</span>
+           </div>
+           <div className="h-3 bg-white rounded-full overflow-hidden p-1 border border-slate-200 shadow-inner">
+              <div 
+                className="h-full bg-indigo-500 rounded-full transition-all duration-1000"
+                style={{ width: `${((currentIndex + 1) / words.length) * 100}%` }}
+              />
+           </div>
+        </div>
 
-        <style jsx global>{`
-          @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            50% { transform: translateX(10px); }
-            75% { transform: translateX(-10px); }
-          }
-          @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-          }
-        `}</style>
+        {/* Game Over Modal */}
+        {lives <= 0 && (
+          <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-6 animate-fadeIn">
+            <div className="glass-card bg-white rounded-[4rem] p-16 text-center max-w-lg w-full border border-indigo-100 shadow-2xl">
+               <div className="text-9xl mb-8">💔</div>
+               <h2 className="text-5xl font-black text-slate-900 tracking-tight uppercase mb-4">Quiz Over</h2>
+               <p className="text-slate-500 font-medium mb-12 text-lg">You ran out of lives. Review your mistakes and try again!</p>
+               <button 
+                  onClick={fetchWords}
+                  className="w-full py-6 bg-indigo-600 text-white rounded-[2.5rem] font-bold text-sm uppercase tracking-wider hover:bg-indigo-700 transition-all shadow-xl"
+               >
+                  Try Again
+               </button>
+               <button 
+                  onClick={() => router.push('/')}
+                  className="w-full mt-4 py-4 bg-transparent text-slate-500 rounded-[2rem] font-bold text-xs uppercase tracking-wider hover:text-slate-800 transition-all"
+               >
+                  Return to Dashboard
+               </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      <style jsx global>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-15px); }
+          50% { transform: translateX(15px); }
+          75% { transform: translateX(-15px); }
+        }
+        .animate-fadeIn { animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-scaleIn { animation: scaleIn 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+      `}</style>
     </div>
   )
 }

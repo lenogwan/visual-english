@@ -27,7 +27,7 @@ export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { token } = useAuth()
+  const { user, token } = useAuth()
 
   const doSearch = useCallback(async (query: string) => {
     if (!query.trim()) {
@@ -70,38 +70,43 @@ export default function SearchPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl text-gray-600">Searching...</div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-6">
+          <div className="w-16 h-16 border-4 border-indigo-400/20 border-t-indigo-600 rounded-full animate-spin"></div>
+          <div className="text-xl font-bold text-slate-400 tracking-widest animate-pulse uppercase">Searching...</div>
+        </div>
       </div>
     )
   }
 
   if (words.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-8 px-4">
+      <div className="min-h-screen bg-slate-50 py-12 px-6">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-4">Search Word</h1>
+          <div className="text-center mb-16">
+            <h1 className="text-5xl font-black text-slate-900 mb-8 tracking-tighter">Search Word</h1>
             <form onSubmit={handleSearch} className="max-w-md mx-auto">
-              <div className="flex gap-2">
+              <div className="relative group">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search for a word..."
-                  className="flex-1 p-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Enter a word..."
+                  className="w-full p-6 bg-white border-2 border-indigo-100 rounded-[2rem] focus:border-indigo-400 focus:outline-none focus:ring-8 focus:ring-indigo-400/5 text-slate-900 placeholder-slate-300 transition-all text-xl font-medium pr-32 shadow-xl"
                 />
                 <button
                   type="submit"
-                  className="px-4 py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700"
+                  className="absolute right-3 top-3 bottom-3 px-8 bg-indigo-600 text-white rounded-[1.5rem] font-black text-sm hover:bg-indigo-700 transition-all active:scale-95"
                 >
-                  Search
+                  SEARCH
                 </button>
               </div>
             </form>
           </div>
-          <div className="text-center text-gray-600">
-            No words found for "{searchQuery}"
+          <div className="bg-white/60 rounded-3xl p-12 text-center border border-indigo-100 shadow-xl">
+            <p className="text-2xl text-slate-400 font-medium italic">
+              No matches found for <span className="text-indigo-600">"{searchQuery}"</span>
+            </p>
           </div>
         </div>
       </div>
@@ -119,65 +124,69 @@ export default function SearchPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-8 px-4">
+    <div className="min-h-screen bg-slate-50 py-12 px-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">Search Result</h1>
-          <form onSubmit={handleSearch} className="max-w-md mx-auto mb-4">
-            <div className="flex gap-2">
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-black text-slate-900 mb-8 tracking-tighter">Search Results</h1>
+          <form onSubmit={handleSearch} className="max-w-md mx-auto mb-6">
+            <div className="relative group">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search for a word..."
-                className="flex-1 p-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Search word..."
+                className="w-full p-6 bg-white border-2 border-indigo-100 rounded-[2rem] focus:border-indigo-400 focus:outline-none focus:ring-8 focus:ring-indigo-400/5 text-slate-900 placeholder-slate-300 transition-all text-xl font-medium pr-32 shadow-xl"
               />
               <button
                 type="submit"
-                className="px-4 py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700"
+                className="absolute right-3 top-3 bottom-3 px-8 bg-indigo-600 text-white rounded-[1.5rem] font-black text-sm hover:bg-indigo-700 transition-all active:scale-95"
               >
-                Search
+                SEARCH
               </button>
             </div>
           </form>
-          <p className="text-gray-600">
-            Result {currentIndex + 1} of {words.length} for "{searchQuery}"
+          <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">
+             Match {currentIndex + 1} of {words.length} for <span className="text-indigo-600">"{searchQuery}"</span>
           </p>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-8 bg-white rounded-2xl p-2 shadow-md">
+        <div className="flex gap-2 mb-10 bg-white/60 rounded-[2rem] p-2 border border-indigo-100 shadow-md">
           <button
             onClick={() => setActiveTab('card')}
-            className={`flex-1 py-3 rounded-xl font-medium transition-all ${
+            className={`flex-1 py-4 rounded-[1.5rem] font-bold text-sm transition-all duration-300 ${
               activeTab === 'card'
-                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? 'bg-indigo-600 text-white shadow-lg translate-y-[-2px]'
+                : 'text-slate-500 hover:bg-white/50 hover:text-indigo-600'
             }`}
           >
-            🎴 Triad Card
+             Triad Card
           </button>
-          <button
-            onClick={() => setActiveTab('images')}
-            className={`flex-1 py-3 rounded-xl font-medium transition-all ${
-              activeTab === 'images'
-                ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            📸 Images
-          </button>
-          <button
-            onClick={() => setActiveTab('scenario')}
-            className={`flex-1 py-3 rounded-xl font-medium transition-all ${
-              activeTab === 'scenario'
-                ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            ✍️ Build Scenario
-          </button>
+          {user && (
+            <>
+              <button
+                onClick={() => setActiveTab('images')}
+                className={`flex-1 py-4 rounded-[1.5rem] font-bold text-sm transition-all duration-300 ${
+                  activeTab === 'images'
+                    ? 'bg-purple-600 text-white shadow-lg translate-y-[-2px]'
+                    : 'text-slate-500 hover:bg-white/50 hover:text-purple-600'
+                }`}
+              >
+                 Images
+              </button>
+              <button
+                onClick={() => setActiveTab('scenario')}
+                className={`flex-1 py-4 rounded-[1.5rem] font-bold text-sm transition-all duration-300 ${
+                  activeTab === 'scenario'
+                    ? 'bg-pink-600 text-white shadow-lg translate-y-[-2px]'
+                    : 'text-slate-500 hover:bg-white/50 hover:text-pink-600'
+                }`}
+              >
+                 Scenario
+              </button>
+            </>
+          )}
         </div>
 
         {/* Content */}
@@ -188,18 +197,18 @@ export default function SearchPage() {
           {activeTab === 'images' && (
             <>
               <ImageSearch word={word} />
-              <div className="flex justify-between mt-6">
+              <div className="flex justify-between mt-10">
                 <button
                   onClick={handlePrev}
-                  className="px-6 py-3 bg-gray-200 rounded-xl font-medium hover:bg-gray-300 transition-colors"
+                  className="px-8 py-4 bg-white/5 border border-white/10 text-indigo-100 rounded-2xl font-black text-sm hover:bg-white/10 transition-all active:scale-95 tracking-widest"
                 >
-                  ← Previous
+                  ← PREVIOUS
                 </button>
                 <button
                   onClick={handleNext}
-                  className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity"
+                  className="px-8 py-4 bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-2xl font-black text-sm shadow-xl shadow-purple-500/20 hover:shadow-purple-500/40 transition-all active:scale-95 tracking-widest"
                 >
-                  Next →
+                  NEXT →
                 </button>
               </div>
             </>
@@ -207,18 +216,18 @@ export default function SearchPage() {
           {activeTab === 'scenario' && (
             <>
               <ScenarioBuilder word={word} />
-              <div className="flex justify-between mt-6">
+              <div className="flex justify-between mt-10">
                 <button
                   onClick={handlePrev}
-                  className="px-6 py-3 bg-gray-200 rounded-xl font-medium hover:bg-gray-300 transition-colors"
+                  className="px-8 py-4 bg-white/5 border border-white/10 text-indigo-100 rounded-2xl font-black text-sm hover:bg-white/10 transition-all active:scale-95 tracking-widest"
                 >
-                  ← Previous
+                  ← PREVIOUS
                 </button>
                 <button
                   onClick={handleNext}
-                  className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity"
+                  className="px-8 py-4 bg-gradient-to-r from-pink-500 to-pink-700 text-white rounded-2xl font-black text-sm shadow-xl shadow-pink-500/20 hover:shadow-pink-500/40 transition-all active:scale-95 tracking-widest"
                 >
-                  Next →
+                  NEXT →
                 </button>
               </div>
             </>
@@ -226,17 +235,17 @@ export default function SearchPage() {
         </div>
 
         {/* Result List */}
-        <div className="mt-12 bg-white rounded-2xl p-6 shadow-md">
-          <h3 className="font-bold text-gray-800 mb-4">Results ({words.length})</h3>
-          <div className="flex flex-wrap gap-2">
+        <div className="mt-20 bg-white/60 rounded-[2.5rem] p-10 border border-indigo-100 shadow-xl">
+          <h3 className="text-xl font-bold text-slate-900 mb-6 font-black uppercase tracking-widest">Search Results ({words.length})</h3>
+          <div className="flex flex-wrap gap-3 max-h-48 overflow-y-auto custom-scrollbar p-1">
             {words.map((w, idx) => (
               <button
                 key={w.id}
                 onClick={() => setCurrentIndex(idx)}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 ${
                   idx === currentIndex
-                    ? 'bg-purple-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-indigo-600 text-white shadow-xl translate-y-[-2px]'
+                    : 'bg-white border border-indigo-100 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50'
                 }`}
               >
                 {w.word}

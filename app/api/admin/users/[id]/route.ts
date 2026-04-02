@@ -23,7 +23,7 @@ export async function PUT(
 ) {
   try {
     const auth = await getAuth(request)
-    if (!auth || auth.role !== 'admin') {
+    if (!auth || (auth.role.toLowerCase() !== 'admin' && auth.role.toLowerCase() !== 'teacher')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -60,7 +60,7 @@ export async function DELETE(
 ) {
   try {
     const auth = await getAuth(request)
-    if (!auth || auth.role !== 'admin') {
+    if (!auth || (auth.role.toLowerCase() !== 'admin' && auth.role.toLowerCase() !== 'teacher')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

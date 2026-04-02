@@ -26,7 +26,7 @@ export default function LearnPage() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [activeTab, setActiveTab] = useState<'card' | 'study' | 'images' | 'scenario'>('card')
   const [loading, setLoading] = useState(true)
-  const { token } = useAuth()
+  const { user, token } = useAuth()
 
   async function fetchWords() {
     try {
@@ -48,7 +48,7 @@ export default function LearnPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-xl text-gray-600">Loading words...</div>
       </div>
     )
@@ -56,7 +56,7 @@ export default function LearnPage() {
 
   if (words.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-xl text-gray-600">No words found. Import word bank first.</div>
       </div>
     )
@@ -73,58 +73,66 @@ export default function LearnPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-8 px-4">
+    <div className="min-h-screen bg-slate-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Learn Words Visually</h1>
-          <p className="text-gray-600">
-            Word {currentIndex + 1} of {words.length}
-          </p>
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-black text-slate-900 mb-3 tracking-tight">
+            Learn Words Visually
+          </h1>
+          <div className="inline-block px-4 py-1.5 glass-card bg-white/80 rounded-full border border-indigo-100">
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">
+              Word {currentIndex + 1} of {words.length}
+            </p>
+          </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-8 bg-white rounded-2xl p-2 shadow-md">
+        <div className="flex gap-2 mb-10 glass-card bg-white/60 rounded-[2rem] p-2 shadow-md border border-indigo-100">
           <button
             onClick={() => setActiveTab('card')}
-            className={`flex-1 py-3 rounded-xl font-medium transition-all ${
+            className={`flex-1 py-4 rounded-[1.5rem] font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
               activeTab === 'card'
-                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? 'bg-indigo-600 text-white shadow-lg translate-y-[-2px]'
+                : 'text-slate-500 hover:bg-white/50 hover:text-indigo-600'
             }`}
           >
-            🎴 Triad Card
+            <span className="text-xl">🎴</span> Triad Card
           </button>
           <button
             onClick={() => setActiveTab('study')}
-            className={`flex-1 py-3 rounded-xl font-medium transition-all ${
+            className={`flex-1 py-4 rounded-[1.5rem] font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
               activeTab === 'study'
-                ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? 'bg-purple-600 text-white shadow-lg translate-y-[-2px]'
+                : 'text-slate-500 hover:bg-white/50 hover:text-purple-600'
             }`}
           >
-            📚 Study
+            <span className="text-xl">📚</span> Study
           </button>
-          <button
-            onClick={() => setActiveTab('images')}
-            className={`flex-1 py-3 rounded-xl font-medium transition-all ${
-              activeTab === 'images'
-                ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            📸 Images
-          </button>
-          <button
-            onClick={() => setActiveTab('scenario')}
-            className={`flex-1 py-3 rounded-xl font-medium transition-all ${
-              activeTab === 'scenario'
-                ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            ✍️ Build Scenario
-          </button>
+          {user && (
+            <>
+              <button
+                onClick={() => setActiveTab('images')}
+                className={`flex-1 py-4 rounded-[1.5rem] font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
+                  activeTab === 'images'
+                    ? 'bg-pink-600 text-white shadow-lg translate-y-[-2px]'
+                    : 'text-slate-500 hover:bg-white/50 hover:text-pink-600'
+                }`}
+              >
+                <span className="text-xl">📸</span> Images
+              </button>
+              <button
+                onClick={() => setActiveTab('scenario')}
+                className={`flex-1 py-4 rounded-[1.5rem] font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
+                  activeTab === 'scenario'
+                    ? 'bg-blue-600 text-white shadow-lg translate-y-[-2px]'
+                    : 'text-slate-500 hover:bg-white/50 hover:text-blue-600'
+                }`}
+              >
+                <span className="text-xl">✍️</span> Scenario
+              </button>
+            </>
+          )}
         </div>
 
         {/* Content */}
@@ -201,17 +209,20 @@ export default function LearnPage() {
         </div>
 
         {/* Word List */}
-        <div className="mt-12 bg-white rounded-2xl p-6 shadow-md">
-          <h3 className="font-bold text-gray-800 mb-4">Random pick ({words.length})</h3>
-          <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
+        <div className="mt-16 glass-card bg-white/80 rounded-3xl p-8 shadow-xl border border-indigo-100">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-slate-900">Quick Select</h3>
+            <span className="text-slate-500 font-medium text-sm">{words.length} words available</span>
+          </div>
+          <div className="flex flex-wrap gap-3 max-h-48 overflow-y-auto custom-scrollbar p-1">
             {words.map((w, idx) => (
               <button
                 key={w.id}
                 onClick={() => setCurrentIndex(idx)}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                className={`px-5 py-2 rounded-xl font-bold text-sm transition-all duration-300 ${
                   idx === currentIndex
-                    ? 'bg-purple-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-indigo-600 text-white shadow-lg scale-105'
+                    : 'bg-white border text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 border-indigo-100'
                 }`}
               >
                 {w.word}

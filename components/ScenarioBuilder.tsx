@@ -26,62 +26,63 @@ export default function ScenarioBuilder({ word }: ScenarioBuilderProps) {
   ]
 
   return (
-    <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl p-8">
-      <div className="mb-6">
-        <h3 className="text-2xl font-bold text-gray-800 mb-2">
-          Build Your Scenario for "{word.word}"
+    <div className="max-w-2xl mx-auto glass-card bg-white/80 rounded-[2.5rem] shadow-xl p-10 border border-indigo-100">
+      <div className="mb-8">
+        <h3 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">
+          Scenario Builder: <span className="text-indigo-600">"{word.word}"</span>
         </h3>
-        <p className="text-gray-600">
-          Create a vivid mental image by writing a sentence with strong visual elements
+        <p className="text-slate-500 font-medium">
+          Forge a lasting mental link by describing a vivid, emotional memory.
         </p>
       </div>
 
       {/* Example scenario */}
       {word.meaning && (
-        <div className="bg-blue-50 rounded-xl p-4 mb-6">
-          <p className="text-sm font-semibold text-blue-700 mb-1">📖 Meaning:</p>
-          <p className="text-gray-800">{word.meaning}</p>
+        <div className="bg-indigo-50/50 rounded-2xl p-6 mb-6 border border-indigo-100 shadow-inner">
+          <p className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-2">📖 Meaning</p>
+          <p className="text-lg text-slate-700 font-medium italic">"{word.meaning}"</p>
         </div>
       )}
 
-      <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 mb-6">
-        <p className="text-sm font-semibold text-purple-700 mb-1">Example:</p>
-        <p className="text-gray-800 italic">"{word.exampleSentence}"</p>
+      <div className="bg-purple-50/50 rounded-2xl p-6 mb-8 border border-purple-100 shadow-inner">
+        <p className="text-xs font-black text-purple-600 uppercase tracking-widest mb-2">Example</p>
+        <p className="text-lg text-slate-700 font-medium italic">"{word.exampleSentence}"</p>
       </div>
 
       {/* Emotional connection hint */}
       {word.emotionalConnection && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-          <p className="text-sm text-yellow-800">
-            💡 {word.emotionalConnection}
+        <div className="bg-indigo-50 border-l-4 border-indigo-400 p-6 mb-8 rounded-r-2xl">
+          <p className="text-slate-700 font-medium leading-relaxed">
+            <span className="text-xl mr-2">💡</span> {word.emotionalConnection}
           </p>
         </div>
       )}
 
       {/* Input area */}
-      <div className="mb-4">
+      <div className="mb-6">
         <textarea
           value={userSentence}
           onChange={(e) => setUserSentence(e.target.value)}
-          placeholder="Write a vivid sentence using this word... Make it visual and emotional!"
-          className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:outline-none resize-none"
+          placeholder="Describe your mental scene... Make it vivid and personal."
+          className="w-full p-6 bg-white border-2 border-indigo-100 rounded-[1.5rem] focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-100 text-slate-800 placeholder-slate-400 transition-all resize-none text-lg"
           rows={3}
         />
       </div>
 
       {/* Hint button */}
-      <div className="mb-4">
+      <div className="mb-6">
         <button
           onClick={() => setShowHint(!showHint)}
-          className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+          className="text-sm text-indigo-600 hover:text-indigo-800 font-bold tracking-wide uppercase transition-colors"
         >
           {showHint ? 'Hide hints' : 'Need inspiration?'}
         </button>
         {showHint && (
-          <ul className="mt-2 space-y-1">
+          <ul className="mt-4 space-y-3">
             {hintSentences.map((hint, idx) => (
-              <li key={idx} className="text-sm text-gray-600 italic">
-                • {hint}
+              <li key={idx} className="text-slate-500 italic flex items-center gap-3 font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400/50"></span>
+                {hint}
               </li>
             ))}
           </ul>
@@ -92,20 +93,21 @@ export default function ScenarioBuilder({ word }: ScenarioBuilderProps) {
       <button
         onClick={handleSave}
         disabled={!userSentence.trim()}
-        className="w-full py-3 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+        className="group relative w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-lg hover:shadow-lg transition-all duration-300 disabled:opacity-30 disabled:hover:shadow-none disabled:cursor-not-allowed overflow-hidden"
       >
-        Save to My Scenarios
+        <span className="relative z-10">SAVE SCENARIO</span>
+        <div className="absolute inset-0 bg-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
       </button>
 
       {/* Saved scenarios */}
       {savedScenarios.length > 0 && (
-        <div className="mt-6">
-          <h4 className="font-semibold text-gray-800 mb-3">My Scenarios:</h4>
-          <div className="space-y-2">
+        <div className="mt-10">
+          <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">My Saved Scenarios</h4>
+          <div className="space-y-4">
             {savedScenarios.map((scenario, idx) => (
               <div
                 key={idx}
-                className="bg-gray-50 rounded-lg p-3 text-gray-700"
+                className="bg-slate-50 rounded-2xl p-5 text-slate-700 border border-slate-200 font-medium shadow-inner"
               >
                 {scenario}
               </div>

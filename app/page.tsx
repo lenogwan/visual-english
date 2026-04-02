@@ -17,139 +17,135 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
-      <section className="max-w-6xl mx-auto px-4 py-16 md:py-24">
-        <div className="text-center">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6">
-            <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 bg-clip-text text-transparent">
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <section className="relative max-w-6xl mx-auto px-4 py-20 md:py-32 overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 opacity-20">
+          <div className="absolute top-10 left-10 w-72 h-72 bg-purple-400 rounded-full blur-[120px] animate-pulse-subtle" />
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-indigo-400 rounded-full blur-[150px] animate-pulse-subtle" style={{ animationDelay: '1s' }} />
+        </div>
+
+        <div className="text-center animate-fadeIn">
+          <h1 className="text-6xl md:text-8xl font-black mb-8 tracking-tight">
+            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
               Visual English
             </span>
           </h1>
-          <p className="text-xl md:text-2xl text-gray-700 mb-4">
-            Stop translating. Start visualizing.
+          <p className="text-2xl md:text-3xl text-gray-600 font-medium mb-4">
+            Stop translating. <span className="text-indigo-600">Start visualizing.</span>
           </p>
-          <p className="text-gray-600 max-w-2xl mx-auto mb-8">
-            Connect English directly to images and scenarios in your mind. No Chinese translation needed.
-            Build native-speaker intuition through visual memory.
+          <p className="text-gray-500 max-w-2xl mx-auto mb-12 text-lg leading-relaxed">
+            Connect English directly to images and scenarios in your mind. 
+            Build native-speaker intuition through visual memory—effortlessly.
           </p>
           
           {/* Search Bar */}
-          <form onSubmit={handleVisualize} className="max-w-xl mx-auto mb-8">
-            <div className="flex gap-2">
+          <form onSubmit={handleVisualize} className="max-w-2xl mx-auto mb-12 transform hover:scale-[1.01] transition-transform">
+            <div className="flex p-2 bg-white/50 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-white/50">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Enter a word to visualize..."
-                className="flex-1 p-4 border-2 border-purple-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg"
+                placeholder="What word do you want to see?"
+                className="flex-1 px-6 py-4 bg-transparent focus:outline-none text-xl font-medium text-gray-700 placeholder:text-gray-400"
               />
               <button
                 type="submit"
-                className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold text-lg hover:opacity-90 transition-opacity shadow-lg"
+                className="px-10 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-[1.6rem] font-bold text-xl hover:opacity-90 transition-all shadow-lg active:scale-95"
               >
                 Visualize
               </button>
             </div>
           </form>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <Link
               href="/learn"
-              className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold text-lg hover:opacity-90 transition-opacity shadow-lg"
+              className="px-10 py-5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-3xl font-bold text-xl hover:shadow-2xl hover:shadow-indigo-200 transition-all hover:-translate-y-1"
             >
               Start Learning
             </Link>
             <Link
               href="/practice"
-              className="px-8 py-4 bg-white text-purple-600 rounded-xl font-semibold text-lg hover:bg-gray-50 transition-colors shadow-lg border-2 border-purple-200"
+              className="px-10 py-5 bg-white/80 backdrop-blur-sm text-indigo-600 rounded-3xl font-bold text-xl hover:bg-white transition-all shadow-xl border border-indigo-50 hover:-translate-y-1"
             >
-              Practice
+              Quick Practice
             </Link>
           </div>
         </div>
       </section>
 
-      <section className="max-w-6xl mx-auto px-4 py-16">
-        <h2 className="text-3xl font-bold text-center mb-12 text-gray-800">
-          The Visualization Method
-        </h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="text-4xl mb-4">🔊</div>
-            <h3 className="text-xl font-bold mb-2 text-gray-800">Sound</h3>
-            <p className="text-gray-600">
-              Accurate pronunciation. Hear it, say it, own it.
-            </p>
-          </div>
-          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="text-4xl mb-4">✍️</div>
-            <h3 className="text-xl font-bold mb-2 text-gray-800">Form</h3>
-            <p className="text-gray-600">
-              Word spelling. See it, write it, remember it.
-            </p>
-          </div>
-          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="text-4xl mb-4">🖼️</div>
-            <h3 className="text-xl font-bold mb-2 text-gray-800">Image</h3>
-            <p className="text-gray-600">
-              Mental picture. The key to instant reflex. No translation!
-            </p>
-          </div>
+      {/* Features section */}
+      <section className="max-w-6xl mx-auto px-4 py-20">
+        <div className="grid md:grid-cols-3 gap-10">
+          {[
+            { icon: '🔊', title: 'Perfect Sound', desc: 'Accurate pronunciation. Hear it, say it, own it with AI assistance.' },
+            { icon: '✍️', title: 'Clear Form', desc: 'Word spelling integrated with usage context for long-term retention.' },
+            { icon: '🖼️', title: 'Visual Reflex', desc: 'Direct brain-to-image connection. Eliminate the "Chinese hurdle" forever.' }
+          ].map((feature, i) => (
+            <div key={i} className="group bg-white/60 backdrop-blur-md rounded-[2.5rem] p-10 shadow-xl border border-white/40 hover:bg-white transition-all hover:scale-105 duration-300">
+              <div className="text-6xl mb-8 group-hover:scale-110 transition-transform inline-block">
+                {feature.icon}
+              </div>
+              <h3 className="text-2xl font-black mb-4 text-gray-800">{feature.title}</h3>
+              <p className="text-gray-500 text-lg leading-relaxed">{feature.desc}</p>
+            </div>
+          ))}
         </div>
       </section>
 
-      <section className="max-w-6xl mx-auto px-4 py-16">
-        <h2 className="text-3xl font-bold text-center mb-12 text-gray-800">
-          How It Works
+      {/* Method Section */}
+      <section className="max-w-6xl mx-auto px-4 py-20">
+        <h2 className="text-4xl md:text-5xl font-black text-center mb-16 tracking-tight text-gray-800">
+          The <span className="text-indigo-600 underline decoration-indigo-200 underline-offset-8">Visualization</span> Workflow
         </h2>
-        <div className="space-y-8">
-          <div className="flex items-start gap-6 bg-white rounded-2xl p-6 shadow-md">
-            <div className="flex-shrink-0 w-12 h-12 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold text-xl">
-              1
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-2 text-gray-800">See the Images</h3>
-              <p className="text-gray-600">
-                Search Google Images for each word. Build a rich visual impression instead of memorizing Chinese translations.
-              </p>
-            </div>
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-8">
+            {[
+              { color: 'bg-indigo-500', title: 'See the Reality', desc: 'We skip translations. You see real-world images that define the word directly.' },
+              { color: 'bg-purple-500', title: 'Feel the Scenario', desc: 'Verbs and abstract concepts come alive through AI-generated emotional stories.' },
+              { color: 'bg-pink-500', title: 'Apply Naturally', desc: 'Build your own context. Your brain remembers feelings better than definitions.' }
+            ].map((step, i) => (
+              <div key={i} className="flex items-center gap-8 group">
+                <div className={`flex-shrink-0 w-16 h-16 ${step.color} text-white rounded-[1.5rem] flex items-center justify-center font-black text-2xl shadow-lg ring-8 ring-white group-hover:rotate-12 transition-transform`}>
+                  {i + 1}
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black mb-1 text-gray-800">{step.title}</h3>
+                  <p className="text-gray-500 text-lg">{step.desc}</p>
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="flex items-start gap-6 bg-white rounded-2xl p-6 shadow-md">
-            <div className="flex-shrink-0 w-12 h-12 bg-pink-500 text-white rounded-full flex items-center justify-center font-bold text-xl">
-              2
+          <div className="relative">
+            <div className="aspect-square bg-gradient-to-br from-indigo-100 to-purple-100 rounded-[3rem] flex items-center justify-center p-12 overflow-hidden shadow-inner">
+               <div className="text-9xl animate-pulse-subtle">🔮</div>
+               <div className="absolute inset-0 bg-white/20 backdrop-blur-[2px]" />
             </div>
-            <div>
-              <h3 className="text-xl font-bold mb-2 text-gray-800">Visualize the Scenario</h3>
-              <p className="text-gray-600">
-                For verbs and abstract words, create a vivid scene. Imagine the action happening. Feel the emotion.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-start gap-6 bg-white rounded-2xl p-6 shadow-md">
-            <div className="flex-shrink-0 w-12 h-12 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold text-xl">
-              3
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-2 text-gray-800">Build Your Own Sentences</h3>
-              <p className="text-gray-600">
-                Create personal, emotional connections. The stronger the feeling, the deeper the memory.
-              </p>
+            <div className="absolute -bottom-6 -right-6 bg-white p-6 rounded-3xl shadow-2xl border border-indigo-50">
+               <p className="text-sm font-bold text-indigo-600">AI Powered Visualization →</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="max-w-6xl mx-auto px-4 py-16">
-        <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-8 md:p-12 text-center text-white">
-          <h2 className="text-3xl font-bold mb-4">Ready to break the translation habit?</h2>
-          <p className="text-lg opacity-90 mb-6">
-            Start building direct English → Image connections today.
+      {/* CTA Section */}
+      <section className="max-w-6xl mx-auto px-4 py-20">
+        <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 rounded-[3rem] p-12 md:p-20 text-center text-white shadow-2xl">
+          <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,1),transparent)]" />
+          </div>
+          
+          <h2 className="text-4xl md:text-6xl font-black mb-8">Ready to think in English?</h2>
+          <p className="text-xl md:text-2xl opacity-90 mb-12 max-w-2xl mx-auto font-medium">
+            Join thousands of learners who have smashed the translation wall. 
+            Your visual journey starts now.
           </p>
           <Link
             href="/learn"
-            className="inline-block px-8 py-4 bg-white text-purple-600 rounded-xl font-semibold text-lg hover:bg-gray-100 transition-colors"
+            className="inline-block px-12 py-6 bg-white text-indigo-600 rounded-3xl font-black text-2xl hover:scale-105 transition-all shadow-2xl hover:shadow-white/20 active:scale-95"
           >
-            Start Now →
+            Start Learning Now
           </Link>
         </div>
       </section>

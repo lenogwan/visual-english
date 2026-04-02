@@ -2,7 +2,12 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0f172a; /* Slate 900 for serious content */
+  --primary-h: 243;
+  --primary-s: 75%;
+  --primary-l: 59%;
+  --primary-gradient: linear-gradient(135deg, hsl(var(--primary-h), var(--primary-s), var(--primary-l)), #a855f7, #ec4899);
+  --relaxed-bg: radial-gradient(circle at top right, #f8fafc 0%, #eff6ff 40%, #f5f3ff 100%);
 }
 
 @theme inline {
@@ -10,12 +15,72 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-indigo-text: #1e1b4b;
+  --color-slate-muted: #64748b;
 }
 
 body {
-  background: var(--background);
+  background: var(--relaxed-bg);
+  background-attachment: fixed;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+}
+
+/* --- Crystal Clarity Design Tokens --- */
+
+.relaxed-bg {
+  background: var(--relaxed-bg);
+  background-attachment: fixed;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 10px 15px -3px rgba(31, 38, 135, 0.05),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+
+.text-gradient {
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.btn-primary {
+  background: var(--primary-gradient);
+  color: white !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(168, 85, 247, 0.4);
+  filter: brightness(1.1);
+}
+
+.btn-primary:active {
+  transform: scale(0.95);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  color: #4f46e5;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: white;
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 /* 3D Card Flip Utilities */
@@ -41,6 +106,15 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes pulse-subtle {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.9; }
+}
+
 .animate-fadeIn {
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s infinite ease-in-out;
 }

@@ -40,13 +40,13 @@ export default function UnsplashImage({ word, className = '', alt = '', fallback
 
   if (loading) {
     return (
-      <div className={`${className} bg-gray-200 animate-pulse rounded-2xl flex items-center justify-center`}>
-        <span className="text-gray-400 text-sm">Loading image...</span>
+      <div className={`${className} bg-slate-100 animate-pulse rounded-2xl flex items-center justify-center`}>
+        <span className="text-slate-400 text-sm font-medium">Loading image...</span>
       </div>
     )
   }
 
-  const src = imageUrl || fallbackUrl || `https://placehold.co/400x300/9333ea/ffffff?text=${encodeURIComponent(word)}`
+  const src = imageUrl || fallbackUrl || `https://placehold.co/400x300/4f46e5/ffffff?text=${encodeURIComponent(word)}`
 
   return (
     <img
@@ -54,7 +54,7 @@ export default function UnsplashImage({ word, className = '', alt = '', fallback
       alt={alt || word}
       className={className}
       onError={(e) => {
-        (e.target as HTMLImageElement).src = `https://placehold.co/400x300/9333ea/ffffff?text=${encodeURIComponent(word)}`
+        (e.target as HTMLImageElement).src = `https://placehold.co/400x300/4f46e5/ffffff?text=${encodeURIComponent(word)}`
       }}
     />
   )
