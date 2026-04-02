@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("User") // "Admin", "Teacher", "User"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  progress      UserProgress[]
+  favoriteWords FavoriteWord[]
+  quizzes       Quiz[]
+  quizAttempts  QuizAttempt[]
+}
+
+model Word {
+  id          String  @id @default(cuid())
+  word        String
+  phonetic    String?
+  audioUrl    String?
+  meaning     String?
+  examples    String  @default("[]")
+  images      String  @default("[]")
+  scenario    String?
+  scenarioImages String @default("[]")
+  exampleSentence String?
+  emotionalConnection String?
+  tags        String  @default("[]")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  progress    UserProgress[]
+  favorites   FavoriteWord[]
+
+  @@unique([word])
+}
+
+model UserProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  wordId      String
+  learned     Boolean  @default(false)
+  masteryLevel Int     @default(0)
+  timesReviewed Int   @default(0)
+  lastReviewedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  word        Word     @relation(fields: [wordId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, wordId])
+}
+
+model FavoriteWord {
+  id        String   @id @default(cuid())
+  userId    String
+  wordId    String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  word      Word     @relation(fields: [wordId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, wordId])
+}
+
+model Quiz {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  type        String   // "image-to-word", "word-to-image", "fill-blank"
+  wordIds     String   // JSON array of word IDs
+  createdById String
+  createdAt   DateTime @default(now())
+
+  createdBy   User           @relation(fields: [createdById], references: [id])
+  attempts    QuizAttempt[]
+}
+
+model QuizAttempt {
+  id        String   @id @default(cuid())
+  quizId    String
+  userId    String
+  score     Int
+  total     Int
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
