@@ -78,6 +78,35 @@ npm run dev
 
 ---
 
+## 🚀 雲端部署與資料庫初始化 (Production & Turso)
+
+本專案支援在 Vercel 部署並使用 **Turso (libSQL)** 作為雲端資料庫。
+
+### 1. 同步資料庫結構
+在本地終端機執行，將 Prisma Schema 推送到 Turso：
+```bash
+$env:TURSO_DATABASE_URL="your_url"; $env:TURSO_AUTH_TOKEN="your_token"; npx prisma db push
+```
+
+### 2. 初始化雲端管理員 (Admin Setup)
+部署後如果資料庫是空的，可透過本地執行以下指令來建立管理員帳號：
+
+**PowerShell:**
+```powershell
+$env:NODE_ENV="production"; $env:TURSO_DATABASE_URL="your_url"; $env:TURSO_AUTH_TOKEN="your_token"; npm run db:init-admin
+```
+
+**Bash / Linux / Mac:**
+```bash
+NODE_ENV=production TURSO_DATABASE_URL="your_url" TURSO_AUTH_TOKEN="your_token" npm run db:init-admin
+```
+
+- **預設帳號**: `admin@visual-english.com`
+- **預設密碼**: `admin123`
+*(登入後請務必修改密碼)*
+
+---
+
 ## 📂 專案結構 (Project Structure)
 
 - `app/`：Next.js App Router 路由與頁面元件。
