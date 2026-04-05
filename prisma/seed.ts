@@ -34,11 +34,23 @@ async function main() {
   ]
 
   for (const w of words) {
-    await prisma.word.upsert({
-      where: { word: w.word },
-      update: w,
-      create: w,
+    const existingWord = await prisma.word.findFirst({
+      where: { word: w.word, senseIndex: 0 }
     })
+
+    if (existingWord) {
+      await prisma.word.update({
+        where: { id: existingWord.id },
+        data: w
+      })
+    } else {
+      await prisma.word.create({
+        data: {
+          ...w,
+          senseIndex: 0
+        }
+      })
+    }
   }
 
   console.log('Database seeded successfully!')

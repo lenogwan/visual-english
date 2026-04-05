@@ -1,8 +1,17 @@
 import { prisma } from '../lib/db'
 
 async function main() {
+  const existingWord = await prisma.word.findFirst({
+    where: { word: 'April' }
+  })
+
+  if (!existingWord) {
+    console.log('Word "April" not found')
+    return
+  }
+
   const word = await prisma.word.update({
-    where: { word: 'April' },
+    where: { id: existingWord.id },
     data: {
       phonetic: '/ˈeɪ.prəl/',
       scenario: 'The fourth month of the year, springtime, often associated with showers and flowers',

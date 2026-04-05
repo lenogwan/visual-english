@@ -1390,20 +1390,30 @@ async function main() {
     const tags = JSON.stringify([partOfSpeech, category, level])
     
     try {
-      await prisma.word.upsert({
-        where: { word: word },
-        update: { tags },
-        create: {
-          word: word,
-          tags,
-          phonetic: null,
-          images: '[]',
-          scenario: null,
-          scenarioImages: '[]',
-          exampleSentence: null,
-          emotionalConnection: null,
-        },
+      const existingWord = await prisma.word.findFirst({
+        where: { word, senseIndex: 0 }
       })
+
+      if (existingWord) {
+        await prisma.word.update({
+          where: { id: existingWord.id },
+          data: { tags }
+        })
+      } else {
+        await prisma.word.create({
+          data: {
+            word,
+            senseIndex: 0,
+            tags,
+            phonetic: null,
+            images: '[]',
+            scenario: null,
+            scenarioImages: '[]',
+            exampleSentence: null,
+            emotionalConnection: null,
+          }
+        })
+      }
       imported++
     } catch (e) {
       skipped++

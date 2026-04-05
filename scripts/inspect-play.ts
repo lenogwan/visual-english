@@ -5,8 +5,7 @@ async function inspect() {
     const playWords = await prisma.word.findMany({
       where: {
         word: {
-          contains: 'play',
-          mode: 'insensitive'
+          contains: 'play'
         }
       }
     })

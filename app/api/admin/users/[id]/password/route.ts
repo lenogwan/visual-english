@@ -7,9 +7,10 @@ const JWT_SECRET = process.env.JWT_SECRET || 'visual-english-secret-key-change-i
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const token = request.headers.get('authorization')?.replace('Bearer ', '')
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -34,7 +35,7 @@ export async function POST(
     const hashedPassword = await hash(newPassword, 10)
 
     const updatedUser = await prisma.user.update({
-      where: { id: params.id },
+      where: { id },
       data: { password: hashedPassword }
     })
 

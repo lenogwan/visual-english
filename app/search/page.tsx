@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import TriadCard from '@/components/TriadCard'
@@ -19,7 +19,7 @@ interface Word {
   tags: string[]
 }
 
-export default function SearchPage() {
+function SearchContent() {
   const [words, setWords] = useState<Word[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [activeTab, setActiveTab] = useState<'card' | 'images' | 'scenario'>('card')
@@ -255,5 +255,20 @@ export default function SearchPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-6">
+          <div className="w-16 h-16 border-4 border-indigo-400/20 border-t-indigo-600 rounded-full animate-spin"></div>
+          <div className="text-xl font-bold text-slate-400 tracking-widest animate-pulse uppercase">Initializing Search...</div>
+        </div>
+      </div>
+    }>
+      <SearchContent />
+    </Suspense>
   )
 }
