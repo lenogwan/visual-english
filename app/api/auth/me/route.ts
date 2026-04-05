@@ -14,22 +14,16 @@ export async function GET(request: NextRequest) {
 
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: string }
     
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        createdAt: true,
-      },
-    })
+    // Use raw query to include settings (bypasses stale Prisma Client)
+    const users: any[] = await prisma.$queryRaw`
+      SELECT id, email, name, role, settings, createdAt FROM User WHERE id = ${decoded.userId}
+    `
 
-    if (!user) {
+    if (!users || users.length === 0) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ user })
+    return NextResponse.json({ user: users[0] })
   } catch (error) {
     console.error('Me error:', error)
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 })

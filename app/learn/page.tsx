@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useAuth } from '@/lib/auth-context'
+import { useSearchParams } from 'next/navigation'
 import TriadCard from '@/components/TriadCard'
 import ImageSearch from '@/components/ImageSearch'
 import ScenarioBuilder from '@/components/ScenarioBuilder'
 import WordCard from '@/components/WordCard'
+import SenseSwitcher from '@/components/SenseSwitcher'
 
 interface Word {
   id: string
@@ -19,22 +21,78 @@ interface Word {
   exampleSentence: string | null
   emotionalConnection: string | null
   tags: string[]
+  partOfSpeech: string
+  level: string
 }
 
-export default function LearnPage() {
+function LearnContent() {
   const [words, setWords] = useState<Word[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [activeTab, setActiveTab] = useState<'card' | 'study' | 'images' | 'scenario'>('card')
   const [loading, setLoading] = useState(true)
+  const [currentSense, setCurrentSense] = useState<Word | null>(null)
   const { user, token } = useAuth()
+  const searchParams = useSearchParams()
+  const mode = searchParams.get('mode')
+  const isFavoritesMode = mode === 'favorites'
+  
+  // Reset tab if in favorites mode and currently on a hidden tab
+  useEffect(() => {
+    if (isFavoritesMode && (activeTab === 'images' || activeTab === 'scenario')) {
+      setActiveTab('card')
+    }
+  }, [isFavoritesMode, activeTab])
+
+  // Parse user settings
+  const userSettings = (() => {
+    try {
+      return user?.settings ? JSON.parse(user.settings) : {}
+    } catch { return {} }
+  })()
+  const dailyGoal = user ? parseInt(userSettings.dailyGoal || '20') : 10
+  const targetLevel = userSettings.englishLevel || ''
 
   async function fetchWords() {
     try {
-      const res = await fetch('/api/words?limit=1000')
-      const data = await res.json()
-      const allWords = data.words || []
-      const shuffled = [...allWords].sort(() => 0.5 - Math.random()).slice(0, 10)
-      setWords(shuffled)
+      setLoading(true)
+      let allWords: any[] = []
+
+      if (isFavoritesMode) {
+        // Fetch from favorites API
+        const res = await fetch('/api/favorites', {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        })
+        const data = await res.json()
+        allWords = (data.favorites || []).map((f: any) => f.word)
+      } else {
+        // Standard learning fetch
+        const apiLevel = targetLevel || 'All'
+        const url = `/api/words?level=${apiLevel}&limit=${dailyGoal}&excludeLearned=${user ? 'true' : 'false'}`
+        const res = await fetch(url, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        })
+        const data = await res.json()
+        allWords = data.words || []
+      }
+      
+      // Group by word string to ensure each word appears only once
+      const uniqueWordsMap = new Map()
+      allWords.forEach((item: any) => {
+        if (!item.word) return // Safety check
+        if (!uniqueWordsMap.has(item.word.toLowerCase())) {
+          uniqueWordsMap.set(item.word.toLowerCase(), item)
+        }
+      })
+      
+      const uniqueWords = Array.from(uniqueWordsMap.values())
+      
+      // For favorites mode, show ALL. For standard mode, shuffle and limit to goal.
+      if (isFavoritesMode) {
+        setWords(uniqueWords)
+      } else {
+        const shuffled = [...uniqueWords].sort(() => 0.5 - Math.random()).slice(0, dailyGoal)
+        setWords(shuffled)
+      }
     } catch (error) {
       console.error('Failed to fetch words:', error)
     } finally {
@@ -44,7 +102,42 @@ export default function LearnPage() {
 
   useEffect(() => {
     fetchWords()
-  }, [])
+  }, [user])
+
+  // Track progress when word changes
+  useEffect(() => {
+    if (!token || !words[currentIndex]) return
+    
+    const trackProgress = async () => {
+      try {
+        await fetch('/api/progress', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            wordId: words[currentIndex].id,
+            learned: true
+          })
+        })
+      } catch (err) {
+        console.error('Failed to track progress:', err)
+      }
+    }
+
+    trackProgress()
+  }, [currentIndex, words, token])
+
+  useEffect(() => {
+    if (words[currentIndex]) {
+      const w = words[currentIndex]
+      setCurrentSense({
+        ...w,
+        partOfSpeech: w.partOfSpeech || 'word'
+      } as Word)
+    }
+  }, [currentIndex, words])
 
   if (loading) {
     return (
@@ -62,8 +155,6 @@ export default function LearnPage() {
     )
   }
 
-  const word = words[currentIndex]
-
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % words.length)
   }
@@ -75,25 +166,15 @@ export default function LearnPage() {
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-black text-slate-900 mb-3 tracking-tight">
-            Learn Words Visually
-          </h1>
-          <div className="inline-block px-4 py-1.5 glass-card bg-white/80 rounded-full border border-indigo-100">
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">
-              Word {currentIndex + 1} of {words.length}
-            </p>
-          </div>
-        </div>
+        {/* Header Removed for Compact Design */}
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-10 glass-card bg-white/60 rounded-[2rem] p-2 shadow-md border border-indigo-100">
+        <div className="flex gap-2 mb-6 glass-card bg-white/60 rounded-3xl p-1.5 shadow-md border border-indigo-100">
           <button
             onClick={() => setActiveTab('card')}
-            className={`flex-1 py-4 rounded-[1.5rem] font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
+            className={`flex-1 py-3 rounded-[1.25rem] font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
               activeTab === 'card'
-                ? 'bg-indigo-600 text-white shadow-lg translate-y-[-2px]'
+                ? 'bg-indigo-600 text-white shadow-lg translate-y-[-1px]'
                 : 'text-slate-500 hover:bg-white/50 hover:text-indigo-600'
             }`}
           >
@@ -101,21 +182,21 @@ export default function LearnPage() {
           </button>
           <button
             onClick={() => setActiveTab('study')}
-            className={`flex-1 py-4 rounded-[1.5rem] font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
+            className={`flex-1 py-3 rounded-[1.25rem] font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
               activeTab === 'study'
-                ? 'bg-purple-600 text-white shadow-lg translate-y-[-2px]'
+                ? 'bg-purple-600 text-white shadow-lg translate-y-[-1px]'
                 : 'text-slate-500 hover:bg-white/50 hover:text-purple-600'
             }`}
           >
             <span className="text-xl">📚</span> Study
           </button>
-          {user && (
+          {user && !isFavoritesMode && (
             <>
               <button
                 onClick={() => setActiveTab('images')}
-                className={`flex-1 py-4 rounded-[1.5rem] font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
+                className={`flex-1 py-3 rounded-[1.25rem] font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
                   activeTab === 'images'
-                    ? 'bg-pink-600 text-white shadow-lg translate-y-[-2px]'
+                    ? 'bg-pink-600 text-white shadow-lg translate-y-[-1px]'
                     : 'text-slate-500 hover:bg-white/50 hover:text-pink-600'
                 }`}
               >
@@ -123,9 +204,9 @@ export default function LearnPage() {
               </button>
               <button
                 onClick={() => setActiveTab('scenario')}
-                className={`flex-1 py-4 rounded-[1.5rem] font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
+                className={`flex-1 py-3 rounded-[1.25rem] font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
                   activeTab === 'scenario'
-                    ? 'bg-blue-600 text-white shadow-lg translate-y-[-2px]'
+                    ? 'bg-blue-600 text-white shadow-lg translate-y-[-1px]'
                     : 'text-slate-500 hover:bg-white/50 hover:text-blue-600'
                 }`}
               >
@@ -135,22 +216,59 @@ export default function LearnPage() {
           )}
         </div>
 
+        {/* Compact Dashboard Bar: Metadata + Senses */}
+        <div className="relative flex items-center justify-center mb-10 p-2 glass-card bg-white/40 rounded-full border border-indigo-50/50 min-h-[56px]">
+          {/* Centered Session Context */}
+          <div className="flex items-center gap-3 px-6">
+             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-r border-slate-200 pr-3">
+              Word {currentIndex + 1} / {words.length}
+            </span>
+            <span className="text-[10px] font-black text-indigo-500 tracking-wider">
+              🎯 GOAL: {dailyGoal}
+            </span>
+            {targetLevel && !isFavoritesMode && (
+              <span className="text-[10px] font-black text-purple-500 tracking-wider flex items-center gap-1">
+                <span className="text-slate-300">•</span>
+                <span>{targetLevel}</span>
+              </span>
+            )}
+            {isFavoritesMode && (
+              <span className="text-[10px] font-black text-pink-600 bg-pink-50 px-3 py-1 rounded-full border border-pink-100 tracking-wider flex items-center gap-1 ml-1 animate-pulse">
+                💖 My Favorites
+              </span>
+            )}
+          </div>
+
+          {/* Right-aligned SenseSwitcher (only if multiple senses exist) */}
+          <div className="absolute right-2 top-1/2 -translate-y-1/2">
+            {currentSense && (
+              <SenseSwitcher 
+                word={currentSense.word} 
+                currentId={currentSense.id} 
+                onSenseSelect={(sense: any) => setCurrentSense(sense)} 
+                theme="indigo"
+              />
+            )}
+          </div>
+        </div>
+
         {/* Content */}
         <div className="animate-fadeIn">
-          {activeTab === 'card' && (
-            <TriadCard word={word} onNext={handleNext} onPrev={handlePrev} />
+          {activeTab === 'card' && currentSense && (
+            <TriadCard word={currentSense} onNext={handleNext} onPrev={handlePrev} />
           )}
-          {activeTab === 'study' && (
+          {activeTab === 'study' && currentSense && (
             <>
               <WordCard
-                word={word.word}
-                phonetic={word.phonetic}
-                meaning={word.meaning}
-                scenario={word.scenario}
-                examples={word.examples}
-                images={word.images}
-                tags={word.tags}
-                emotionalConnection={word.emotionalConnection}
+                wordId={currentSense.id}
+                word={currentSense.word}
+                phonetic={currentSense.phonetic}
+                meaning={currentSense.meaning}
+                scenario={currentSense.scenario}
+                examples={currentSense.examples}
+                images={currentSense.images}
+                tags={currentSense.tags}
+                emotionalConnection={currentSense.emotionalConnection}
               />
               <div className="flex justify-between mt-6">
                 <button
@@ -168,9 +286,9 @@ export default function LearnPage() {
               </div>
             </>
           )}
-          {activeTab === 'images' && (
+          {activeTab === 'images' && currentSense && (
             <>
-              <ImageSearch word={word} />
+              <ImageSearch word={currentSense} />
               <div className="flex justify-between mt-6">
                 <button
                   onClick={handlePrev}
@@ -187,9 +305,9 @@ export default function LearnPage() {
               </div>
             </>
           )}
-          {activeTab === 'scenario' && (
+          {activeTab === 'scenario' && currentSense && (
             <>
-              <ScenarioBuilder word={word} />
+              <ScenarioBuilder word={currentSense} />
               <div className="flex justify-between mt-6">
                 <button
                   onClick={handlePrev}
@@ -232,5 +350,17 @@ export default function LearnPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LearnPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-indigo-400/20 border-t-indigo-600 rounded-full animate-spin"></div>
+      </div>
+    }>
+      <LearnContent />
+    </Suspense>
   )
 }

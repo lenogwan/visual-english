@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import UnsplashImage from '@/components/UnsplashImage'
+import SenseSwitcher from '@/components/SenseSwitcher'
 
 interface WordCardProps {
+  wordId?: string
   word: string
   phonetic?: string | null
   meaning?: string | null
@@ -13,27 +15,101 @@ interface WordCardProps {
   images?: string[]
   tags?: string[]
   emotionalConnection?: string | null
+  hideType?: boolean
 }
 
 export default function WordCard({
-  word,
-  phonetic,
-  meaning,
-  scenario,
-  examples = [],
-  images = [],
-  tags = [],
-  emotionalConnection,
+  wordId: initialWordId,
+  word: initialWord,
+  phonetic: initialPhonetic,
+  meaning: initialMeaning,
+  scenario: initialScenario,
+  examples: initialExamples = [],
+  images: initialImages = [],
+  tags: initialTags = [],
+  emotionalConnection: initialEmotionalConnection,
+  hideType = false,
 }: WordCardProps) {
-  const { user } = useAuth()
+  const { user, token } = useAuth()
+  
+  const [currentSense, setCurrentSense] = useState<any>({
+    id: initialWordId,
+    word: initialWord,
+    phonetic: initialPhonetic,
+    meaning: initialMeaning,
+    scenario: initialScenario,
+    examples: initialExamples,
+    images: initialImages,
+    tags: initialTags,
+    emotionalConnection: initialEmotionalConnection,
+    partOfSpeech: initialTags[0] || 'word'
+  })
+
   const [exampleIndex, setExampleIndex] = useState(0)
   const [score, setScore] = useState(3)
+  const [isFavorited, setIsFavorited] = useState(false)
+  const [favLoading, setFavLoading] = useState(false)
 
-  const displayExamples = examples.length > 0 ? examples : ['No examples available.']
+  // Sync with prop changes
+  useEffect(() => {
+    setCurrentSense({
+      id: initialWordId,
+      word: initialWord,
+      phonetic: initialPhonetic,
+      meaning: initialMeaning,
+      scenario: initialScenario,
+      examples: initialExamples,
+      images: initialImages,
+      tags: initialTags,
+      emotionalConnection: initialEmotionalConnection,
+      partOfSpeech: initialTags[0] || 'word'
+    })
+  }, [initialWordId, initialWord])
+
+  useEffect(() => {
+    if (!user || !token || !currentSense.id) return
+    fetch('/api/favorites', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(data => {
+        const favIds = (data.favorites || []).map((f: any) => f.wordId)
+        setIsFavorited(favIds.includes(currentSense.id))
+      })
+      .catch(() => {})
+  }, [user, token, currentSense.id])
+
+  const switchSense = (sense: any) => {
+    setCurrentSense({
+      ...sense,
+      partOfSpeech: sense.partOfSpeech || (typeof sense.tags === 'string' ? JSON.parse(sense.tags)[0] : sense.tags?.[0]) || 'word'
+    })
+    setExampleIndex(0)
+  }
+
+  const toggleFavorite = async () => {
+    if (!user || !token || !currentSense.id || favLoading) return
+    setFavLoading(true)
+    const prev = isFavorited
+    setIsFavorited(!prev)
+    try {
+      const res = await fetch('/api/favorites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ wordId: currentSense.id }),
+      })
+      const data = await res.json()
+      setIsFavorited(data.favorited)
+    } catch {
+      setIsFavorited(prev)
+    } finally {
+      setFavLoading(false)
+    }
+  }
+
+  const displayExamples = currentSense.examples.length > 0 ? currentSense.examples : ['No examples available.']
 
   const playPronunciation = () => {
     if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(word)
+      const utterance = new SpeechSynthesisUtterance(currentSense.word)
       utterance.lang = 'en-US'
       utterance.rate = 0.8
       speechSynthesis.speak(utterance)
@@ -52,8 +128,8 @@ export default function WordCard({
   const prevExample = () => setExampleIndex(exampleIndex === 0 ? displayExamples.length - 1 : exampleIndex - 1)
   const nextExample = () => setExampleIndex(exampleIndex >= displayExamples.length - 1 ? 0 : exampleIndex + 1)
 
-  const pos = tags[0] || 'word'
-  const category = tags[1] || ''
+  const pos = currentSense.partOfSpeech || 'word'
+  const category = currentSense.tags[1] || ''
 
   return (
     <div className="max-w-6xl mx-auto p-4">
@@ -61,12 +137,14 @@ export default function WordCard({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
           {/* Left Side - Image & Visual Essence */}
           <div className="p-8">
+            {/* Sense Switcher removed - handled by parent page */}
+
             <div className="rounded-3xl overflow-hidden mb-8 shadow-md border border-indigo-50 aspect-video lg:aspect-square relative group">
               <UnsplashImage
-                word={word}
-                alt={word}
-                className="w-full h-full object-cover"
-                fallbackUrl={images[0]}
+                word={currentSense.word}
+                alt={currentSense.word}
+                className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                fallbackUrl={currentSense.images[0]}
               />
             </div>
 
@@ -89,7 +167,7 @@ export default function WordCard({
                   </div>
                 </div>
                 <p className="text-lg text-slate-600 italic leading-relaxed font-medium">
-                  "{emotionalConnection || `A vivid mental picture of ${word} in action.`}"
+                  "{currentSense.emotionalConnection || `A vivid mental picture of ${currentSense.word} in action.`}"
                 </p>
               </div>
           </div>
@@ -97,21 +175,39 @@ export default function WordCard({
           {/* Right Side - Word Info */}
           <div className="p-10 bg-white/60 backdrop-blur-sm border-l border-indigo-100 flex flex-col justify-center">
             {/* Tags */}
-            <div className="flex flex-wrap gap-2 mb-6">
+            <div className="flex flex-wrap gap-2 mb-6 items-center">
               {category && (
                 <span className="px-4 py-1.5 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold border border-indigo-200 tracking-wider">
                   {category.toUpperCase()}
                 </span>
               )}
-              <span className="px-4 py-1.5 bg-purple-100 text-purple-700 rounded-full text-xs font-bold border border-purple-200 tracking-wider">
-                {pos.toUpperCase()}
-              </span>
+              {!hideType && (
+                <span className="px-4 py-1.5 bg-purple-100 text-purple-700 rounded-full text-xs font-bold border border-purple-200 tracking-wider">
+                  {pos.toUpperCase()}
+                </span>
+              )}
+              {user && currentSense.id && (
+                <button
+                  onClick={toggleFavorite}
+                  disabled={favLoading}
+                  className={`ml-auto p-2.5 rounded-full transition-all active:scale-90 ${
+                    isFavorited
+                      ? 'text-red-500 bg-red-50 hover:bg-red-100'
+                      : 'text-slate-300 hover:text-red-400 hover:bg-red-50'
+                  }`}
+                  title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                >
+                  <svg className="w-6 h-6" fill={isFavorited ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </button>
+              )}
             </div>
 
             {/* Word & Phonetic */}
             <div className="mb-10">
               <div className="flex items-center gap-5 mb-3">
-                <h1 className="text-6xl font-black text-slate-900 tracking-tighter">{word}</h1>
+                <h1 className="text-6xl font-black text-slate-900 tracking-tighter">{currentSense.word}</h1>
                 <button
                   onClick={playPronunciation}
                   className="p-3.5 bg-indigo-50 text-indigo-600 rounded-full shadow-md hover:bg-indigo-100 hover:scale-110 transition-all border border-indigo-100"
@@ -121,21 +217,21 @@ export default function WordCard({
                   </svg>
                 </button>
               </div>
-              <p className="text-2xl text-slate-500 font-medium tracking-wide">{phonetic}</p>
+              <p className="text-2xl text-slate-500 font-medium tracking-wide">{currentSense.phonetic}</p>
             </div>
 
             {/* Definition */}
             <div className="mb-8">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">DEFINITION</p>
-              <p className="text-xl text-slate-800 leading-relaxed font-medium">{meaning}</p>
+              <p className="text-xl text-slate-800 leading-relaxed font-medium">{currentSense.meaning}</p>
             </div>
 
             {/* Scenario */}
-            {scenario && (
+            {currentSense.scenario && (
               <div className="mb-8">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">SCENARIO</p>
                 <div className="bg-indigo-50/50 rounded-2xl p-5 border border-indigo-100 shadow-inner">
-                  <p className="text-slate-600 leading-relaxed font-medium">{scenario}</p>
+                  <p className="text-slate-600 leading-relaxed font-medium">{currentSense.scenario}</p>
                 </div>
               </div>
             )}

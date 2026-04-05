@@ -15,8 +15,13 @@ export default function UnsplashImage({ word, className = '', alt = '', fallback
   const [error, setError] = useState(false)
 
   useEffect(() => {
-    if (!word) return
+    // If a fallbackUrl is provided, we skip the Unsplash search
+    if (fallbackUrl || !word) {
+      if (loading) setLoading(false);
+      return;
+    }
     
+    // Check cache
     const cached = localStorage.getItem(`unsplash_${word}`)
     if (cached) {
       setImageUrl(cached)
@@ -24,6 +29,7 @@ export default function UnsplashImage({ word, className = '', alt = '', fallback
       return
     }
 
+    setLoading(true)
     fetch(`/api/unsplash?q=${encodeURIComponent(word)}`)
       .then(res => res.json())
       .then(data => {
@@ -36,9 +42,9 @@ export default function UnsplashImage({ word, className = '', alt = '', fallback
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false))
-  }, [word])
+  }, [word, fallbackUrl])
 
-  if (loading) {
+  if (loading && !fallbackUrl) {
     return (
       <div className={`${className} bg-slate-100 animate-pulse rounded-2xl flex items-center justify-center`}>
         <span className="text-slate-400 text-sm font-medium">Loading image...</span>
@@ -46,7 +52,7 @@ export default function UnsplashImage({ word, className = '', alt = '', fallback
     )
   }
 
-  const src = imageUrl || fallbackUrl || `https://placehold.co/400x300/4f46e5/ffffff?text=${encodeURIComponent(word)}`
+  const src = fallbackUrl || imageUrl || `https://placehold.co/400x300/4f46e5/ffffff?text=${encodeURIComponent(word)}`
 
   return (
     <img

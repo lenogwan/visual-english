@@ -11,6 +11,7 @@ interface Word {
   meaning: string | null
   images: string[]
   tags: string[]
+  level: string
 }
 
 export default function CreateQuizPage() {
@@ -52,7 +53,7 @@ export default function CreateQuizPage() {
 
   const filteredWords = words.filter((w) => {
     const matchesSearch = w.word.toLowerCase().includes(search.toLowerCase())
-    const matchesLevel = !levelFilter || w.tags.includes(levelFilter)
+    const matchesLevel = !levelFilter || w.level === levelFilter
     return matchesSearch && matchesLevel
   })
 
@@ -96,7 +97,7 @@ export default function CreateQuizPage() {
     }
   }
 
-  const levels = [...new Set(words.map((w) => w.tags[2]).filter(Boolean))]
+  const levels = [...new Set(words.map((w) => w.level).filter(Boolean))]
 
   if (loading) {
     return (

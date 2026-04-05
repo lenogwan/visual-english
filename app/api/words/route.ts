@@ -31,15 +31,27 @@ export async function GET(request: NextRequest) {
       where.word = { contains: search }
     }
     
-    // Improved dual filtering
-    const filters = []
-    if (level && level !== 'All') filters.push(level)
-    if (topic && topic !== 'All') filters.push(topic)
-    
-    if (filters.length > 0) {
-      where.AND = filters.map(f => ({
-        tags: { contains: f }
-      }))
+    if (level && level !== 'All' && level !== 'ANY') {
+      where.level = level
+    }
+
+    if (topic && topic !== 'All' && topic !== 'ANY') {
+      where.tags = { contains: topic }
+    }
+
+    // Exclude learned words if requested
+    const excludeLearned = searchParams.get('excludeLearned') === 'true'
+    if (excludeLearned) {
+        const auth = await getAuth(request)
+        if (auth) {
+            where.progress = {
+                none: {
+                    userId: auth.id,
+                    learned: true,
+                    masteryLevel: { gte: 5 } // Consider 'mastered' at level 5
+                }
+            }
+        }
     }
 
     const [words, total] = await Promise.all([
@@ -78,15 +90,31 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { word, phonetic, meaning, exampleSentence, emotionalConnection, scenario, images, scenarioImages, tags } = body
+    const { 
+      word, 
+      partOfSpeech,
+      senseIndex,
+      phonetic, 
+      meaning, 
+      exampleSentence, 
+      emotionalConnection, 
+      scenario, 
+      images, 
+      scenarioImages, 
+      tags,
+      level,
+      examples 
+    } = body
 
     if (!word) {
       return NextResponse.json({ error: 'Word is required' }, { status: 400 })
     }
 
-    const newWord = await prisma.word.create({
+    const newWord = await (prisma.word as any).create({
       data: {
         word,
+        partOfSpeech: partOfSpeech || (tags?.[0]) || 'unknown',
+        senseIndex: senseIndex || 0,
         phonetic: phonetic || null,
         meaning: meaning || null,
         exampleSentence: exampleSentence || null,
@@ -94,7 +122,9 @@ export async function POST(request: NextRequest) {
         scenario: scenario || null,
         images: JSON.stringify(images || []),
         scenarioImages: JSON.stringify(scenarioImages || []),
-        tags: JSON.stringify(tags || ['noun', 'General', 'A1']),
+        tags: JSON.stringify(tags || []),
+        level: level || 'A1',
+        examples: JSON.stringify(examples || []),
       },
     })
 

@@ -7,6 +7,7 @@ interface User {
   email: string
   name: string | null
   role: string // "Admin", "Teacher", "User"
+  settings?: string | null // JSON string of preferences
   createdAt: string
 }
 
@@ -30,16 +31,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const storedToken = localStorage.getItem('token')
     const storedUser = localStorage.getItem('user')
     
-    if (storedToken && storedUser) {
+    if (storedToken) {
       setToken(storedToken)
-      try {
-        setUser(JSON.parse(storedUser))
-      } catch {
-        // Invalid stored user, remove it
-        localStorage.removeItem('user')
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser))
+        } catch {
+          localStorage.removeItem('user')
+        }
       }
+      // Proactively verify the session with the server
+      fetchUser(storedToken)
+    } else {
+      setLoading(false)
     }
-    setLoading(false)
   }, [])
 
   async function fetchUser(t: string) {

@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
         email: user.email,
         name: user.name,
         role: user.role,
+        settings: (user as any).settings || '{}',
         createdAt: user.createdAt,
       },
       token,

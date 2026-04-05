@@ -1,6 +1,8 @@
 export interface WordData {
   id?: string
   word: string
+  partOfSpeech?: string
+  senseIndex?: number
   phonetic?: string | null
   meaning?: string | null
   examples?: string[]

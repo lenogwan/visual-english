@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { WordData } from '@/lib/data'
 import { useAuth } from '@/lib/auth-context'
 import UnsplashImage from '@/components/UnsplashImage'
+import SenseSwitcher from '@/components/SenseSwitcher'
 
 interface TriadCardProps {
   word: WordData
@@ -11,17 +12,70 @@ interface TriadCardProps {
   onPrev?: () => void
 }
 
-export default function TriadCard({ word, onNext, onPrev }: TriadCardProps) {
-  const { user } = useAuth()
+export default function TriadCard({ word: initialWord, onNext, onPrev }: TriadCardProps) {
+  const { user, token } = useAuth()
+  
+  // State for current sense
+  const [currentSense, setCurrentSense] = useState<any>(initialWord)
   const [flipped, setFlipped] = useState(false)
   const [exampleIndex, setExampleIndex] = useState(0)
+  const [isFavorited, setIsFavorited] = useState(false)
+  const [favLoading, setFavLoading] = useState(false)
 
-  const examples = word.examples && word.examples.length > 0 ? word.examples : ['No examples available.']
+  // Sync with prop if it changes (from parent)
+  useEffect(() => {
+    setCurrentSense(initialWord)
+    setFlipped(false)
+    setExampleIndex(0)
+  }, [initialWord])
+
+  // Check if current sense is favorited
+  useEffect(() => {
+    if (!user || !token || !currentSense.id) return
+    fetch('/api/favorites', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(data => {
+        const favIds = (data.favorites || []).map((f: any) => f.wordId)
+        setIsFavorited(favIds.includes(currentSense.id))
+      })
+      .catch(() => {})
+  }, [user, token, currentSense.id])
+
+  const switchSense = (sense: any) => {
+    setCurrentSense({
+      ...sense,
+      partOfSpeech: sense.partOfSpeech || (typeof sense.tags === 'string' ? JSON.parse(sense.tags)[0] : sense.tags?.[0]) || 'word'
+    })
+    setExampleIndex(0)
+  }
+
+  const toggleFavorite = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!user || !token || !currentSense.id || favLoading) return
+    setFavLoading(true)
+    const prev = isFavorited
+    setIsFavorited(!prev)
+    try {
+      const res = await fetch('/api/favorites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ wordId: currentSense.id }),
+      })
+      const data = await res.json()
+      setIsFavorited(data.favorited)
+    } catch {
+      setIsFavorited(prev)
+    } finally {
+      setFavLoading(false)
+    }
+  }
+
+  const examples = currentSense.examples && currentSense.examples.length > 0 ? currentSense.examples : ['No examples available.']
 
   const playPronunciation = (e: React.MouseEvent) => {
     e.stopPropagation()
     if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(word.word)
+      const utterance = new SpeechSynthesisUtterance(currentSense.word)
       utterance.lang = 'en-US'
       utterance.rate = 0.8
       speechSynthesis.speak(utterance)
@@ -48,149 +102,164 @@ export default function TriadCard({ word, onNext, onPrev }: TriadCardProps) {
     setExampleIndex(exampleIndex >= examples.length - 1 ? 0 : exampleIndex + 1)
   }
 
-  const pos = word.tags[0] || 'word'
-  const category = word.tags[1] || ''
+  const playFeelIt = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const text = currentSense.emotionalConnection || `A vivid mental picture of ${currentSense.word} in action.`
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.lang = 'en-US'
+      utterance.rate = 0.85
+      speechSynthesis.speak(utterance)
+    }
+  }
+
+  const pos = currentSense.partOfSpeech || (currentSense.tags?.[0]) || 'word'
+  const category = currentSense.tags?.[1] || ''
 
   return (
-    <div className="max-w-md mx-auto">
+    <div className="max-w-xl mx-auto">
       <div
-        className="relative cursor-pointer perspective-1000"
+        className="relative cursor-pointer perspective-1000 h-[680px]"
         onClick={() => setFlipped(!flipped)}
-        style={{ minHeight: '520px' }}
       >
         <div
-          className={`transition-transform duration-500 transform-style-3d ${
+          className={`transition-transform duration-500 transform-style-3d h-full ${
             flipped ? 'rotate-y-180' : ''
           }`}
         >
           {/* Front - Image + Definition */}
-          <div className="backface-hidden">
-            <div className="glass-card bg-white/80 rounded-3xl shadow-xl overflow-hidden border border-indigo-100">
-              {/* Tags */}
-              <div className="flex gap-2 p-4 pb-2">
+          <div className="backface-hidden absolute inset-0">
+            <div className="glass-card bg-white/95 rounded-[3.5rem] shadow-2xl overflow-hidden h-full border border-indigo-50 flex flex-col">
+              <div className="p-6 pb-2 flex gap-3 items-center justify-center">
                 {category && (
-                  <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold border border-indigo-200">
+                  <span className="px-4 py-1 bg-slate-100 text-slate-500 rounded-full text-[10px] font-black tracking-widest border border-slate-200/50">
                     {category.toUpperCase()}
                   </span>
                 )}
-                <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold border border-purple-200">
+                <span className="px-4 py-1 bg-indigo-50 text-indigo-400 rounded-full text-[10px] font-black tracking-widest border border-indigo-100/50">
                   {pos.toUpperCase()}
                 </span>
+                {user && currentSense.id && (
+                  <button
+                    onClick={toggleFavorite}
+                    disabled={favLoading}
+                    className={`p-2 rounded-full transition-all active:scale-90 ${
+                      isFavorited
+                        ? 'text-red-500 bg-red-50 hover:bg-red-100'
+                        : 'text-slate-300 hover:text-red-400 hover:bg-red-50'
+                    }`}
+                  >
+                    <svg className="w-5 h-5" fill={isFavorited ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                  </button>
+                )}
               </div>
 
-              {/* Word & Phonetic */}
-              <div className="px-6 pb-2">
-                <div className="flex items-center gap-3">
-                  <h1 className="text-4xl font-black text-slate-900 tracking-tight">{word.word}</h1>
+              <div className="px-10 pt-6 pb-4 text-center">
+                <div className="flex items-center justify-center gap-6 mb-2">
+                  <h1 className="text-5xl font-serif italic text-slate-800 tracking-tight font-[family-name:var(--font-playfair)]">
+                    {currentSense.word}
+                  </h1>
                   <button
                     onClick={playPronunciation}
-                    className="p-2.5 bg-indigo-50 rounded-full hover:bg-indigo-100 transition-all duration-300 text-indigo-600 border border-indigo-100"
+                    className="p-3 bg-slate-50 rounded-full text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 transition-all duration-300 border border-slate-100"
                   >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" />
                     </svg>
                   </button>
                 </div>
-                <p className="text-lg text-slate-500 font-medium mt-1">{word.phonetic}</p>
+                <p className="text-lg text-slate-400 font-medium tracking-[0.2em]">{currentSense.phonetic}</p>
               </div>
 
-              {/* Image */}
-              <div className="px-6 py-3">
-                <div className="aspect-square rounded-2xl overflow-hidden shadow-lg bg-gray-100 flex items-center justify-center relative">
+              <div className="px-12 py-2 flex items-center justify-center">
+                <div className="w-full max-h-[280px] aspect-[4/3] rounded-[3rem] overflow-hidden shadow-2xl border border-white transform hover:scale-[1.01] transition-transform duration-700">
                   <UnsplashImage
-                    word={word.word}
-                    alt={word.word}
+                    word={currentSense.word}
+                    alt={currentSense.word}
                     className="w-full h-full object-cover"
-                    fallbackUrl={word.images[0]}
+                    fallbackUrl={currentSense.images[0]}
                   />
                 </div>
               </div>
 
-              {/* Definition */}
-              <div className="px-6 pb-6 mt-2">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">DEFINITION</p>
-                <p className="text-lg text-slate-800 leading-relaxed font-medium">{word.meaning}</p>
-              </div>
-
-              <div className="flex items-center justify-center gap-2 pb-6 opacity-60">
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse" />
-                <p className="text-sm text-slate-500 font-medium select-none">
-                  Tap to flip
-                </p>
+              <div className="px-14 pb-8 pt-4 text-center mt-auto">
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.5em] mb-4 inline-block px-5 py-1.5 bg-slate-100/80 rounded-full border border-slate-200">ESSENTIAL MEANING</p>
+                <div className="max-h-[140px] overflow-y-auto no-scrollbar">
+                  <p className="text-lg md:text-xl font-medium text-slate-600 leading-[1.6] tracking-wide max-w-[90%] mx-auto font-serif">
+                    {currentSense.meaning}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Back - Scenario Example + Feel It */}
           <div className="backface-hidden rotate-y-180 absolute inset-0">
-            <div className="glass-card bg-white/80 rounded-3xl shadow-xl overflow-hidden h-full border border-indigo-100 flex flex-col">
-              <div className="p-8 flex-1">
+            <div className="glass-card bg-white/95 rounded-[3.5rem] shadow-2xl overflow-hidden h-full border border-indigo-50 flex flex-col">
+              <div className="p-10 flex-1 flex flex-col">
                 <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">🎬 Scenario</h2>
-                  <span className="px-4 py-1.5 bg-indigo-50 rounded-full text-sm font-bold text-indigo-600 border border-indigo-100">
-                    {word.word}
+                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">CONTEXTUAL SCENARIO</h2>
+                  <span className="px-5 py-2 bg-indigo-50/50 rounded-full text-xs font-serif italic text-indigo-500 border border-indigo-100/30 font-[family-name:var(--font-playfair)]">
+                    {currentSense.word}
                   </span>
                 </div>
 
-                {/* Example with navigation */}
-                <div className="bg-indigo-50/50 rounded-2xl p-6 mb-6 border border-indigo-100 shadow-inner">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                       <span className="text-[10px] font-black text-indigo-600 uppercase tracking-wider">
-                         EXAMPLE {exampleIndex + 1} / {examples.length}
-                       </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={playExample}
-                        className="p-2 bg-white hover:bg-slate-50 text-indigo-600 rounded-xl transition-all border border-indigo-100 shadow-sm"
-                      >
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={prevExample}
-                        className="p-2 bg-white hover:bg-slate-50 text-indigo-600 rounded-xl transition-all border border-indigo-100 shadow-sm"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={nextExample}
-                        className="p-2 bg-white hover:bg-slate-50 text-indigo-600 rounded-xl transition-all border border-indigo-100 shadow-sm"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
+                {/* Scenario Images snapshot - Theater Mode */}
+                {currentSense.scenarioImages && currentSense.scenarioImages.length > 0 ? (
+                  <div className="mb-8 rounded-[2.5rem] overflow-hidden border border-white shadow-2xl relative group h-[240px] bg-slate-50">
+                    <div className="flex w-full h-full overflow-x-auto snap-x snap-mandatory no-scrollbar text-[0]">
+                      {currentSense.scenarioImages.map((img: string, idx: number) => (
+                        <div key={idx} className="flex-shrink-0 w-full h-full snap-center relative">
+                          <img
+                            src={img}
+                            alt={`Scenario ${idx + 1}`}
+                            className="w-full h-full object-cover transition-transform duration-1000"
+                          />
+                          {currentSense.scenarioImages.length > 1 && (
+                            <div className="absolute bottom-6 right-6 px-4 py-2 bg-white/30 backdrop-blur-lg rounded-full text-[9px] font-black text-slate-800 uppercase tracking-widest border border-white/20 shadow-lg">
+                              {idx + 1} / {currentSense.scenarioImages.length}
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  <p className="text-xl text-slate-700 italic leading-relaxed font-medium">
-                    "{examples[exampleIndex]}"
-                  </p>
-                </div>
+                ) : (
+                  <div className="mb-8 rounded-[2.5rem] overflow-hidden border border-slate-100 bg-slate-50/50 h-[200px] flex flex-col items-center justify-center gap-3">
+                    <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center">
+                      <svg className="w-6 h-6 text-indigo-200 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Visualizing Scenario...</p>
+                  </div>
+                )}
 
-                {/* Feel It */}
-                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 border border-indigo-100 shadow-md">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="p-1.5 bg-indigo-100 rounded-lg">
-                      <span className="text-xs">💡</span>
-                    </div>
-                    <span className="text-sm font-black text-indigo-600 uppercase tracking-wider">FEEL IT</span>
+                {/* Feel It - Meditative Impact */}
+                <div className="flex-1 flex flex-col justify-center py-6">
+                  <div className="flex items-center justify-center gap-8 mb-8">
+                    <div className="w-16 h-px bg-slate-100"></div>
+                    <button
+                      onClick={playFeelIt}
+                      className="p-5 bg-white text-indigo-400 rounded-full shadow-lg hover:text-indigo-600 hover:shadow-xl active:scale-95 transition-all border border-indigo-50/30 group relative"
+                    >
+                      <div className="absolute inset-0 bg-indigo-50 rounded-full scale-0 group-hover:scale-100 transition-transform opacity-50"></div>
+                      <svg className="w-7 h-7 relative z-10 transform group-hover:rotate-12 transition-transform" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M11 3a1 1 0 011 1v12a1 1 0 01-1.707.707L7.586 13H5a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM15.5 8a1.5 1.5 0 010 3 1.5 1.5 0 010-3z" />
+                      </svg>
+                    </button>
+                    <div className="w-16 h-px bg-slate-100"></div>
                   </div>
-                  <p className="text-base text-slate-600 italic leading-relaxed font-medium">
-                    "{word.emotionalConnection || `A vivid mental picture of ${word.word} in action.`}"
+                  <p className="text-xl md:text-2xl text-slate-500 italic leading-[1.9] font-medium text-center tracking-wide font-serif font-[family-name:var(--font-playfair)] px-10">
+                    "{currentSense.emotionalConnection || `A vivid mental picture of ${currentSense.word} in action.`}"
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center justify-center gap-2 pb-8 opacity-60">
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse" />
-                <p className="text-sm text-slate-500 font-medium select-none">
-                  Tap to flip back
-                </p>
+              <div className="pb-12 flex justify-center opacity-30">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] select-none">Tap to flip back</p>
               </div>
             </div>
           </div>
@@ -198,22 +267,22 @@ export default function TriadCard({ word, onNext, onPrev }: TriadCardProps) {
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between mt-10">
+      <div className="flex justify-between mt-8 px-6">
         <button
           onClick={(e) => {
             e.stopPropagation()
             onPrev?.()
           }}
-          className="px-8 py-4 bg-white text-slate-700 rounded-2xl font-bold hover:bg-slate-50 transition-all border border-indigo-100 shadow-md flex items-center gap-2"
+          className="px-8 py-4 bg-white/50 backdrop-blur-md text-slate-500 rounded-[2rem] font-black text-[10px] tracking-widest hover:bg-white hover:text-slate-800 transition-all border border-slate-200/50 shadow-sm flex items-center gap-3 uppercase"
         >
-          <span>←</span> Previous
+          <span>←</span> Prev
         </button>
         <button
           onClick={(e) => {
             e.stopPropagation()
             onNext?.()
           }}
-          className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:shadow-lg hover:bg-indigo-500 transition-all shadow-md flex items-center gap-2"
+          className="px-8 py-4 bg-indigo-600 text-white rounded-[2rem] font-black text-[10px] tracking-widest hover:bg-indigo-500 hover:shadow-2xl hover:-translate-y-1 transition-all shadow-xl flex items-center gap-3 uppercase"
         >
           Next <span>→</span>
         </button>

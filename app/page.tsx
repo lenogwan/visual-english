@@ -4,11 +4,16 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import Link from 'next/link'
+import Dashboard from '@/components/Dashboard'
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('')
   const router = useRouter()
   const { user } = useAuth()
+
+  if (user) {
+    return <Dashboard />
+  }
 
   const handleVisualize = async (e: React.FormEvent) => {
     e.preventDefault()

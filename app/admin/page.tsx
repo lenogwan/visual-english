@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation'
 interface Word {
   id: string
   word: string
+  partOfSpeech: string
+  senseIndex: number
   phonetic: string | null
   meaning: string | null
   examples: string[]
@@ -15,6 +17,7 @@ interface Word {
   scenarioImages: string[]
   emotionalConnection: string | null
   tags: string[]
+  level: string
 }
 
 interface User {
@@ -55,7 +58,9 @@ async function fetchDefinition(word: string, targetPOS: string, level: string = 
 
 const PAGE_SIZE = 50
 const LEVELS = ['A1', 'A2', 'B1']
-const TOPICS = ['General', 'food', 'travel', 'sports', 'work', 'animals']
+// Default topics kept as fallback
+const DEFAULT_TOPICS = ['General', 'food', 'travel', 'sports', 'work', 'animals']
+const DEFAULT_POS = ['noun', 'verb', 'adjective', 'adverb']
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'words' | 'users' | 'quizzes'>('words')
@@ -66,6 +71,7 @@ export default function AdminPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null)
   const [loading, setLoading] = useState(true)
+  const [initialLoading, setInitialLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [search, setSearch] = useState('')
@@ -75,10 +81,16 @@ export default function AdminPage() {
   const [hasMoreWords, setHasMoreWords] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [totalWords, setTotalWords] = useState(0)
+  const [dynamicTopics, setDynamicTopics] = useState<string[]>(DEFAULT_TOPICS)
+  const [dynamicPOS, setDynamicPOS] = useState<string[]>(DEFAULT_POS)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const sentinelRef = useRef<HTMLDivElement | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
   const [showAddUserModal, setShowAddUserModal] = useState(false)
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [importWords, setImportWords] = useState<any[]>([])
+  const [overrideExisting, setOverrideExisting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   
   // Quiz form state
   const [quizTitle, setQuizTitle] = useState('')
@@ -120,9 +132,9 @@ export default function AdminPage() {
       images: word.images.join('\n'),
       scenarioImages: word.scenarioImages.join('\n'),
       examples: (word.examples || []).join('\n'),
-      partOfSpeech: tags[0] || 'noun',
+      partOfSpeech: word.partOfSpeech || 'noun',
       category: tags[1] || 'General',
-      level: tags[2] || 'A1',
+      level: word.level || 'A1',
     }
   }
 
@@ -180,12 +192,29 @@ export default function AdminPage() {
     setLoading(true)
     if (activeTab === 'words') {
       fetchWords()
+      fetchMetadata()
     } else if (activeTab === 'users' && (user.role === 'admin' || user.role === 'Admin')) {
       fetchUsers()
     } else if (activeTab === 'quizzes') {
       fetchQuizzes()
     }
   }, [user, activeTab])
+
+  async function fetchMetadata() {
+    if (!token) return
+    try {
+      const res = await fetch('/api/admin/words/metadata', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setDynamicTopics(data.categories?.length > 0 ? data.categories : DEFAULT_TOPICS)
+        setDynamicPOS(data.partsOfSpeech?.length > 0 ? data.partsOfSpeech : DEFAULT_POS)
+      }
+    } catch (error) {
+      console.error('Failed to fetch metadata:', error)
+    }
+  }
 
   // Reset & refetch when filters change
   useEffect(() => {
@@ -217,6 +246,7 @@ export default function AdminPage() {
   async function fetchQuizzes() {
     if (!token) {
       setLoading(false)
+      setInitialLoading(false)
       return
     }
     try {
@@ -229,6 +259,7 @@ export default function AdminPage() {
       console.error('Failed to fetch quizzes:', error)
     } finally {
       setLoading(false)
+      setInitialLoading(false)
     }
   }
 
@@ -259,12 +290,14 @@ export default function AdminPage() {
     } finally {
       setLoading(false)
       setLoadingMore(false)
+      setInitialLoading(false)
     }
   }
 
   async function fetchUsers() {
     if (!token) {
       setLoading(false)
+      setInitialLoading(false)
       return
     }
     try {
@@ -277,6 +310,7 @@ export default function AdminPage() {
       console.error('Failed to fetch users:', error)
     } finally {
       setLoading(false)
+      setInitialLoading(false)
     }
   }
 
@@ -285,7 +319,7 @@ export default function AdminPage() {
     setFormData(initFormFromWord(word))
   }
 
-  async function saveWord() {
+  async function updateWord() {
     if (!selectedWord || !token) return
     
     setSaving(true)
@@ -293,7 +327,7 @@ export default function AdminPage() {
       const images = formData.images.split('\n').filter((url) => url.trim())
       const scenarioImages = formData.scenarioImages.split('\n').filter((url) => url.trim())
       const tags = [formData.partOfSpeech, formData.category, formData.level]
-
+      
       const res = await fetch(`/api/words/${selectedWord.id}`, {
         method: 'PUT',
         headers: {
@@ -301,20 +335,24 @@ export default function AdminPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
+          word: selectedWord.word, // In case we want to update the word string too
+          partOfSpeech: formData.partOfSpeech,
+          senseIndex: 0, // Default for now
           phonetic: formData.phonetic || null,
           meaning: formData.meaning || null,
           scenario: formData.scenario || null,
           emotionalConnection: formData.emotionalConnection || null,
-          images: JSON.stringify(images),
-          scenarioImages: JSON.stringify(scenarioImages),
-          examples: JSON.stringify(formData.examples.split('\n').filter(s => s.trim())),
-          tags: JSON.stringify(tags),
+          images: images,
+          scenarioImages: scenarioImages,
+          examples: formData.examples.split('\n').filter(s => s.trim()),
+          tags: [formData.partOfSpeech, formData.category, formData.level, ...tags.filter(t => ![formData.partOfSpeech, formData.category, formData.level].includes(t))],
         }),
       })
 
       if (res.ok) {
         setMessage({ type: 'success', text: 'Word saved successfully!' })
         fetchWords()
+        fetchMetadata() // Refresh metadata after save
         setTimeout(() => setMessage(null), 3000)
       } else {
         setMessage({ type: 'error', text: 'Failed to save word' })
@@ -401,6 +439,8 @@ export default function AdminPage() {
         },
         body: JSON.stringify({
           word: addForm.word.trim(),
+          partOfSpeech: addForm.partOfSpeech,
+          senseIndex: 0,
           phonetic: addForm.phonetic || null,
           meaning: addForm.meaning || null,
           scenario: addForm.scenario || null,
@@ -417,6 +457,7 @@ export default function AdminPage() {
         resetAddForm()
         setShowAddModal(false)
         fetchWords()
+        fetchMetadata() // Refresh metadata
         setTimeout(() => setMessage(null), 3000)
       } else {
         setMessage({ type: 'error', text: 'Failed to add word' })
@@ -477,6 +518,40 @@ export default function AdminPage() {
     } catch (error) {
       console.error('Failed to delete user:', error)
       setMessage({ type: 'error', text: 'Failed to delete user' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function resetUserPassword(userId: string) {
+    if (!token) return
+    const newPassword = prompt('Enter new password for this user (min 6 characters):')
+    if (!newPassword) return
+    if (newPassword.length < 6) {
+      alert('Password must be at least 6 characters.')
+      return
+    }
+    
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ newPassword }),
+      })
+      if (res.ok) {
+        setMessage({ type: 'success', text: 'Password reset successfully!' })
+        setTimeout(() => setMessage(null), 3000)
+      } else {
+        const data = await res.json()
+        setMessage({ type: 'error', text: data.error || 'Failed to reset password' })
+      }
+    } catch (error) {
+      console.error('Failed to reset password:', error)
+      setMessage({ type: 'error', text: 'Failed to reset password' })
     } finally {
       setSaving(false)
     }
@@ -599,7 +674,128 @@ export default function AdminPage() {
     return matchesSearch
   })
 
-  if (loading) {
+  // Export & Template Helpers
+  async function downloadBackup() {
+    if (!token) return
+    try {
+      setLoading(true)
+      const res = await fetch('/api/admin/words/export', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!res.ok) throw new Error('Export failed')
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `word_library_backup_${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Backup failed' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function downloadTemplate() {
+    const headers = ['word', 'partOfSpeech', 'level', 'phonetic', 'meaning', 'examples', 'images', 'scenario', 'scenarioImages', 'emotionalConnection', 'tags']
+    const sample = ['apple', 'noun', 'A1', '/ˈæp.əl/', 'A round fruit', 'I eat an apple.;Simple and healthy.', 'url1;url2', 'Apple on a table', 'url3', 'Vitamin C', 'fruit;food']
+    const csvContent = [headers.join(','), sample.join(',')].join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'words_template.csv'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(url)
+  }
+
+  // Import Implementation
+  async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+    
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      const text = e.target?.result as string
+      try {
+        const rows = text.split('\n').filter(r => r.trim())
+        if (rows.length < 2) throw new Error('CSV is empty or missing headers')
+
+        const headers = rows[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''))
+        const parsedWords = rows.slice(1).map(row => {
+          // Manual basic CSV row parsing to handle quotes
+          const cols: string[] = []
+          let cur = ''
+          let inQuotes = false
+          for (let i = 0; i < row.length; i++) {
+            const char = row[i]
+            if (char === '"') inQuotes = !inQuotes
+            else if (char === ',' && !inQuotes) {
+              cols.push(cur.trim().replace(/^"|"$/g, '').replace(/""/g, '"'))
+              cur = ''
+            } else cur += char
+          }
+          cols.push(cur.trim().replace(/^"|"$/g, '').replace(/""/g, '"'))
+
+          const wordObj: any = {}
+          headers.forEach((h, i) => {
+            const val = cols[i] || ''
+            if (['examples', 'images', 'scenarioImages', 'tags'].includes(h)) {
+              wordObj[h] = val ? val.split(';').map(s => s.trim()).filter(Boolean) : []
+            } else {
+              wordObj[h] = val
+            }
+          })
+          return wordObj
+        })
+
+        setImportWords(parsedWords)
+        setShowImportModal(true)
+      } catch (err) {
+        setMessage({ type: 'error', text: 'Failed to parse CSV' })
+      }
+    }
+    reader.readAsText(file)
+    event.target.value = '' // Reset input
+  }
+
+  async function executeImport() {
+    if (!token || !importWords.length) return
+    setSaving(true)
+    try {
+      const res = await fetch('/api/admin/words/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ words: importWords, override: overrideExisting })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setMessage({ 
+          type: 'success', 
+          text: `Success! Created: ${data.created}, Updated: ${data.updated}, Skipped: ${data.skipped}` 
+        })
+        setShowImportModal(false)
+        fetchWords()
+        setTimeout(() => setMessage(null), 5000)
+      } else {
+        throw new Error(data.error)
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Import failed' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (initialLoading) {
     return (
       <div className="min-h-screen relaxed-bg flex items-center justify-center">
         <div className="flex flex-col items-center gap-6">
@@ -647,33 +843,6 @@ export default function AdminPage() {
                 Quizzes
               </button>
             </div>
-            
-            <div className="h-8 w-[1px] bg-slate-200 hidden md:block mx-2"></div>
-
-            {activeTab === 'users' && (user?.role === 'admin' || user?.role === 'Admin') && (
-               <button
-                onClick={() => setShowAddUserModal(true)}
-                className="p-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 group"
-                title="Add New User"
-              >
-                <div className="flex items-center gap-2 px-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                  <span className="text-[10px] font-bold uppercase tracking-wider">Add User</span>
-                </div>
-              </button>
-            )}
-            {activeTab === 'quizzes' && (
-              <button
-                onClick={() => setShowAddQuizModal(true)}
-                className="p-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 group"
-                title="Create New Quiz"
-              >
-                <div className="flex items-center gap-2 px-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                  <span className="text-[10px] font-bold uppercase tracking-wider">Create Quiz</span>
-                </div>
-              </button>
-            )}
           </div>
         </div>
 
@@ -718,7 +887,7 @@ export default function AdminPage() {
                     className="bg-white/50 border border-indigo-100/50 rounded-xl p-2.5 text-xs font-bold text-slate-600 focus:outline-none focus:border-indigo-500 transition-all cursor-pointer"
                   >
                     <option value="" className="bg-white">All Topics</option>
-                    {TOPICS.map((t) => (
+                    {dynamicTopics.map((t) => (
                       <option key={t} value={t} className="bg-white">{t}</option>
                     ))}
                   </select>
@@ -726,14 +895,49 @@ export default function AdminPage() {
               </div>
 
               <div className="flex justify-between items-center mb-4 px-1">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{words.length} / {totalWords} WORDS</span>
-                <button
-                  onClick={openAddModal}
-                  className="p-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-all"
-                  title="Add New Word"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                </button>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{words.length} / {totalWords} WORDS</span>
+                  {loading && !initialLoading && (
+                    <div className="w-3 h-3 border-2 border-indigo-100 border-t-indigo-500 rounded-full animate-spin"></div>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={downloadBackup}
+                    className="p-1.5 bg-green-50 hover:bg-green-100 text-green-600 rounded-lg transition-all"
+                    title="Backup Word Library (CSV)"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                  </button>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-1.5 bg-pink-50 hover:bg-pink-100 text-pink-600 rounded-lg transition-all"
+                    title="Import Words (CSV)"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12"/></svg>
+                  </button>
+                  <button
+                    onClick={downloadTemplate}
+                    className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-lg transition-all"
+                    title="Download Import Template"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  </button>
+                  <button
+                    onClick={openAddModal}
+                    className="p-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-all"
+                    title="Add New Word"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                  </button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept=".csv"
+                    onChange={handleFileChange}
+                  />
+                </div>
               </div>
 
               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-2">
@@ -750,8 +954,9 @@ export default function AdminPage() {
                     <div className="relative z-10 flex justify-between items-center">
                       <div>
                         <div className="font-bold text-sm tracking-tight mb-1">{word.word}</div>
-                        <div className={`text-[10px] font-semibold uppercase tracking-wider ${selectedWord?.id === word.id ? 'text-indigo-100' : 'text-slate-400'}`}>
-                          {word.tags.slice(0, 2).join(' • ')}
+                        <div className={`flex flex-wrap gap-1 mt-1 ${selectedWord?.id === word.id ? 'text-indigo-100' : 'text-slate-400'}`}>
+                          <span className="px-1 py-0.5 bg-white/20 rounded text-[8px] font-black uppercase tracking-tighter">{word.level}</span>
+                          <span className="text-[10px] font-semibold uppercase tracking-wider">{word.tags.slice(0, 2).join(' • ')}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -790,6 +995,9 @@ export default function AdminPage() {
                     <div className="flex-1">
                       <h2 className="text-6xl font-black text-slate-900 tracking-tighter mb-4">{selectedWord.word}</h2>
                       <div className="flex flex-wrap gap-2">
+                        <span className="px-3 py-1 bg-indigo-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest leading-none flex items-center">
+                          {selectedWord.level}
+                        </span>
                         {selectedWord.tags.map((tag, i) => (
                           <span key={i} className="px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-[10px] font-bold uppercase tracking-wider text-indigo-600">
                             {tag}
@@ -818,44 +1026,40 @@ export default function AdminPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                    <div className="glass-card bg-white/40 rounded-3xl p-6 border border-indigo-100/50">
+                    <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 ml-1">Part of Speech</label>
-                      <select
+                      <input
+                        list="pos-options"
                         value={formData.partOfSpeech}
                         onChange={(e) => setFormData({ ...formData, partOfSpeech: e.target.value })}
-                        className="w-full p-4 bg-white/60 border-2 border-indigo-100/50 rounded-2xl focus:border-indigo-500 focus:outline-none text-slate-800 transition-all font-medium text-sm cursor-pointer"
-                      >
-                        <option value="noun" className="bg-white">noun</option>
-                        <option value="verb" className="bg-white">verb</option>
-                        <option value="adjective" className="bg-white">adjective</option>
-                        <option value="adverb" className="bg-white">adverb</option>
-                      </select>
+                        className="w-full p-4 bg-white/60 border-2 border-indigo-100/50 rounded-2xl focus:border-indigo-500 focus:outline-none text-slate-800 placeholder-slate-400 transition-all font-medium"
+                        placeholder="noun, verb, etc."
+                      />
+                      <datalist id="pos-options">
+                        {dynamicPOS.map(p => <option key={p} value={p} />)}
+                      </datalist>
                     </div>
-                    <div className="glass-card bg-white/40 rounded-3xl p-6 border border-indigo-100/50">
+                    <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 ml-1">Category</label>
-                      <select
+                      <input
+                        list="category-options"
                         value={formData.category}
                         onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                        className="w-full p-4 bg-white/60 border-2 border-indigo-100/50 rounded-2xl focus:border-indigo-500 focus:outline-none text-slate-800 transition-all font-medium text-sm cursor-pointer"
-                      >
-                        <option value="General" className="bg-white">General</option>
-                        <option value="food" className="bg-white">food</option>
-                        <option value="travel" className="bg-white">travel</option>
-                        <option value="sports" className="bg-white">sports</option>
-                        <option value="work" className="bg-white">work</option>
-                        <option value="animals" className="bg-white">animals</option>
-                      </select>
+                        className="w-full p-4 bg-white/60 border-2 border-indigo-100/50 rounded-2xl focus:border-indigo-500 focus:outline-none text-slate-800 placeholder-slate-400 transition-all font-medium"
+                        placeholder="General, food, etc."
+                      />
+                      <datalist id="category-options">
+                        {dynamicTopics.map(t => <option key={t} value={t} />)}
+                      </datalist>
                     </div>
-                    <div className="glass-card bg-white/40 rounded-3xl p-6 border border-indigo-100/50">
+                    <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 ml-1">Level</label>
                       <select
                         value={formData.level}
                         onChange={(e) => setFormData({ ...formData, level: e.target.value })}
-                        className="w-full p-4 bg-white/60 border-2 border-indigo-100/50 rounded-2xl focus:border-indigo-500 focus:outline-none text-slate-800 transition-all font-medium text-sm cursor-pointer"
+                        className="w-full p-4 bg-white/60 border-2 border-indigo-100/50 rounded-2xl focus:border-indigo-500 focus:outline-none text-slate-800 transition-all font-medium cursor-pointer"
                       >
-                        <option value="A1" className="bg-white">A1</option>
-                        <option value="A2" className="bg-white">A2</option>
-                        <option value="B1" className="bg-white">B1</option>
+                        {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
                       </select>
                     </div>
                   </div>
@@ -919,7 +1123,7 @@ export default function AdminPage() {
                     </div>
 
                     <button
-                      onClick={saveWord}
+                      onClick={updateWord}
                       disabled={saving}
                       className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[2rem] font-bold text-sm tracking-wide shadow-lg hover:shadow-xl active:scale-95 transition-all disabled:opacity-50 mt-8"
                     >
@@ -951,8 +1155,15 @@ export default function AdminPage() {
                 />
                 <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
               </div>
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4 ml-2">
-                Users • {filteredUsers.length}
+              <div className="flex justify-between items-center mb-4 px-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Users • {filteredUsers.length}</span>
+                <button
+                  onClick={() => setShowAddUserModal(true)}
+                  className="p-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-all"
+                  title="Add New User"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                </button>
               </div>
               <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
                 {filteredUsers.map((u) => (
@@ -1047,6 +1258,28 @@ export default function AdminPage() {
                       </div>
                     </div>
                   </div>
+
+                  <div className="glass-card bg-white/40 rounded-3xl p-8 border border-red-100/30">
+                    <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest mb-6 flex items-center gap-2">
+                      <span className="text-lg">🛡️</span> Security & Actions
+                    </h3>
+                    <div className="flex flex-wrap gap-4">
+                      <button
+                        onClick={() => resetUserPassword(selectedUser.id)}
+                        disabled={saving}
+                        className="flex-1 min-w-[200px] px-6 py-4 bg-slate-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 transition-all shadow-lg shadow-slate-200 disabled:opacity-50 flex items-center justify-center gap-3"
+                      >
+                        <span className="text-base">🔏</span>
+                        Reset User Password
+                      </button>
+                      <div className="flex-1 min-w-[240px] p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50 flex items-center gap-4">
+                        <div className="text-2xl">🔑</div>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase leading-relaxed tracking-wider">
+                          Forcing a password reset will grant the user immediate access with the new credentials. Use with caution.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
@@ -1063,8 +1296,15 @@ export default function AdminPage() {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 animate-fadeIn">
             {/* Quiz List Sidebar */}
             <div className="lg:col-span-1 glass-card rounded-[2.5rem] p-6 border border-indigo-100 shadow-xl self-start h-[800px] flex flex-col bg-white/60">
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4 ml-2">
-                Quizzes • {quizzes.length}
+              <div className="flex justify-between items-center mb-4 px-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Quizzes • {quizzes.length}</span>
+                <button
+                  onClick={() => setShowAddQuizModal(true)}
+                  className="p-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-all"
+                  title="Create New Quiz"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                </button>
               </div>
               <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
                 {quizzes.map((quiz) => (
@@ -1227,19 +1467,36 @@ export default function AdminPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
-                    { label: 'Part of Speech', field: 'partOfSpeech', options: ['noun', 'verb', 'adjective', 'adverb'] },
-                    { label: 'Category', field: 'category', options: ['General', 'food', 'travel', 'sports', 'work', 'animals'] },
-                    { label: 'Level', field: 'level', options: ['A1', 'A2', 'B1'] }
+                    { label: 'Part of Speech', field: 'partOfSpeech', options: dynamicPOS, isCreatable: true },
+                    { label: 'Category', field: 'category', options: dynamicTopics, isCreatable: true },
+                    { label: 'Level', field: 'level', options: LEVELS, isCreatable: false }
                   ].map((sel) => (
                     <div key={sel.field}>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">{sel.label}</label>
-                      <select
-                        value={(addForm as any)[sel.field]}
-                        onChange={(e) => setAddForm({ ...addForm, [sel.field]: e.target.value })}
-                        className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-700 text-xs font-bold uppercase tracking-widest transition-all cursor-pointer"
-                      >
-                        {sel.options.map(opt => <option key={opt} value={opt} className="bg-white">{opt}</option>)}
-                      </select>
+                      {sel.isCreatable ? (
+                        <>
+                          <input
+                            list={`${sel.field}-add-options`}
+                            value={(addForm as any)[sel.field]}
+                            onChange={(e) => setAddForm({ ...addForm, [sel.field]: e.target.value })}
+                            className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-700 text-xs font-bold uppercase tracking-widest transition-all"
+                            placeholder={`Pick or type...`}
+                          />
+                          <datalist id={`${sel.field}-add-options`}>
+                            {sel.options.map(opt => <option key={opt} value={opt} />)}
+                          </datalist>
+                        </>
+                      ) : (
+                        <select
+                          value={(addForm as any)[sel.field]}
+                          onChange={(e) => setAddForm({ ...addForm, [sel.field]: e.target.value })}
+                          className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-700 text-xs font-bold uppercase tracking-widest transition-all cursor-pointer"
+                        >
+                          {sel.options.map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1469,6 +1726,54 @@ export default function AdminPage() {
                   className="flex-[2] py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-3xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-600/30 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
                 >
                   {saving ? 'Creating...' : 'Construct Module'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Import Confirmation Modal */}
+        {showImportModal && (
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-[60] p-4 animate-fadeIn">
+            <div className="bg-white/95 rounded-[3rem] p-12 border border-indigo-100 shadow-2xl max-w-md w-full relative">
+              <div className="text-[10px] font-black text-pink-500 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                <span>📦</span> Ready to Import
+              </div>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tighter mb-6">Confirm CSV Import</h2>
+              <p className="text-slate-500 font-medium text-sm mb-8 leading-relaxed">
+                We've decoded <strong className="text-indigo-600 font-black">{importWords.length}</strong> words from your file. How should we handle existing records?
+              </p>
+
+              <div className="bg-slate-50 border border-indigo-50 rounded-2xl p-6 mb-8">
+                <label className="flex items-center gap-4 cursor-pointer group">
+                  <div className="relative flex items-center justify-center">
+                    <input
+                      type="checkbox"
+                      checked={overrideExisting}
+                      onChange={(e) => setOverrideExisting(e.target.checked)}
+                      className="peer appearance-none w-6 h-6 border-2 border-indigo-200 rounded-lg checked:bg-indigo-600 checked:border-indigo-600 transition-all cursor-pointer"
+                    />
+                    <svg className="absolute w-4 h-4 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7"/></svg>
+                  </div>
+                  <div>
+                    <span className="text-sm font-black text-slate-800 uppercase tracking-wide group-hover:text-indigo-600 transition-colors">Override Existing Records</span>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase mt-1 leading-tight">Match by Word + Part of Speech</p>
+                  </div>
+                </label>
+              </div>
+
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setShowImportModal(false)}
+                  className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={executeImport}
+                  disabled={saving}
+                  className="flex-[2] py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-600/30 active:scale-95 transition-all disabled:opacity-50"
+                >
+                  {saving ? 'Importing...' : 'Launch Import'}
                 </button>
               </div>
             </div>

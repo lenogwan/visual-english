@@ -49,6 +49,24 @@ export default function ScenarioBuilder({ word }: ScenarioBuilderProps) {
         <p className="text-lg text-slate-700 font-medium italic">"{word.exampleSentence}"</p>
       </div>
 
+      {/* Scenario Images Gallery */}
+      {word.scenarioImages && word.scenarioImages.length > 0 && (
+        <div className="mb-8">
+          <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">🎬 Scenario Context</p>
+          <div className="grid grid-cols-2 gap-4">
+            {word.scenarioImages.map((img, idx) => (
+              <div key={idx} className="rounded-3xl overflow-hidden aspect-video border-2 border-indigo-50 shadow-sm relative group">
+                <img
+                  src={img}
+                  alt={`Scenario ${idx + 1}`}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Emotional connection hint */}
       {word.emotionalConnection && (
         <div className="bg-indigo-50 border-l-4 border-indigo-400 p-6 mb-8 rounded-r-2xl">

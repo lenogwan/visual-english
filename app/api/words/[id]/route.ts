@@ -19,18 +19,21 @@ export async function PUT(
 
     const body = await request.json()
 
-    const word = await prisma.word.update({
+    const word = await (prisma.word as any).update({
       where: { id },
       data: {
+        word: body.word,
+        partOfSpeech: body.partOfSpeech,
+        senseIndex: body.senseIndex,
         phonetic: body.phonetic,
         meaning: body.meaning,
         scenario: body.scenario,
         exampleSentence: body.exampleSentence,
         emotionalConnection: body.emotionalConnection,
-        images: body.images,
-        scenarioImages: body.scenarioImages,
-        examples: body.examples,
-        tags: body.tags,
+        images: Array.isArray(body.images) ? JSON.stringify(body.images) : body.images,
+        scenarioImages: Array.isArray(body.scenarioImages) ? JSON.stringify(body.scenarioImages) : body.scenarioImages,
+        examples: Array.isArray(body.examples) ? JSON.stringify(body.examples) : body.examples,
+        tags: Array.isArray(body.tags) ? JSON.stringify(body.tags) : body.tags,
       },
     })
 
