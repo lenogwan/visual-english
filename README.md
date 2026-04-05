@@ -1,36 +1,99 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🔮 Visual English - Stop Translating. Start Visualizing.
 
-## Getting Started
+Visual English 是一個現代化、直覺化的英語學習平台，旨在打破「翻譯思維」。我們透過圖片、AI 生成的情境以及感官連結，幫助學習者建立像母語人士一樣的「視覺反射」，跳過中文翻譯，直接將單字與現實世界連結。
 
-First, run the development server:
+---
 
+## 🚀 核心理念 (Core Concepts)
+
+- **視覺反射 (Visual Reflex)**：直接建立大腦與圖像的連結，徹底消除「中文轉譯」的門檻。
+- **情境感官 (Scenario & Emotion)**：利用 AI 生成的情境故事與情感連結，強化長期記憶。
+- **感官整合 (Sensory Integration)**：結合完美的發音 (音)、單字拼寫 (形) 與視覺圖像 (意)。
+
+---
+
+## ✨ 主要功能 (Features)
+
+- **視覺化搜尋 (Visualize Search)**：輸入單字，直接呈現定義該單字的真實世界圖片。
+- **多重語義支持 (Multi-Sense Support)**：完整呈現一個單字在不同情境下的多種意涵。
+- **AI 情境生成 (AI-Powered Scenarios)**：透過 AI 自動生成描述單字用法的情境故事與聯想圖示。
+- **個人化學習進度 (Progress Tracking)**：記錄已學單字、熟練度以及複習週期。
+- **測驗系統 (Quiz System)**：自定義測驗與模擬測試，檢驗學習成果。
+- **管理後台 (Admin Dashboard)**：強大的單字庫管理與使用者權限設定。
+
+---
+
+## 🛠️ 技術堆疊 (Tech Stack)
+
+### Frontend & Framework
+- **Next.js 15+ (App Router)**：提供卓越的效能與 SEO 優勢。
+- **React 19**：使用最新的 React 特性與 Hooks。
+- **Tailwind CSS 4**：打造精美、流暢且具備磨砂玻璃質感的 UI。
+
+### Backend & Database
+- **Prisma ORM**：強類型的資料庫操作介面。
+- **SQLite**：開發階段使用，確保輕巧與快速原型開發。
+- **Next.js API Routes**：構建穩健的後端服務邏輯。
+
+### Security & AI
+- **JWT / Jose**：安全的身份驗證機制。
+- **Bcryptjs**：密碼加密存儲。
+- **Unsplash API / ComfyUI Integration**：獲取高品質圖片與 AI 生成內容。
+
+---
+
+## 📦 快速開始 (Quick Start)
+
+### 1. 複製專案
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/lenogwan/visual-english.git
+cd visual-english
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. 安裝依賴
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. 環境設定
+建立 `.env` 檔案並設定以下變數：
+```env
+DATABASE_URL="file:./dev.db"
+JWT_SECRET="your-secret-key"
+# 其他 API 密鑰如 UNSPLASH_ACCESS_KEY 等
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 4. 資料庫初始化
+```bash
+npx prisma migrate dev --name init
+npm run db:seed
+```
 
-## Learn More
+### 5. 啟動開發伺服器
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+開啟 [http://localhost:3000](http://localhost:3000) 即可開始體驗！
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📂 專案結構 (Project Structure)
 
-## Deploy on Vercel
+- `app/`：Next.js App Router 路由與頁面元件。
+- `components/`：可重複使用的 UI 元件 (如 WordCard, Dashboard)。
+- `lib/`：共享的工具函式、資料庫配置與驗證邏輯。
+- `prisma/`：資料庫 Schema 定義與遷移腳本。
+- `scripts/`：資料維護、導入與檢查腳本。
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🤝 貢獻指南
+
+歡迎任何形式的 Pull Request 或 Issue 回饋！讓我們一起打造更好的英語學習環境。
+
+---
+
+## 📄 授權協議
+
+本專案採用 [MIT License](LICENSE)。
