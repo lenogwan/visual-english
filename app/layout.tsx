@@ -20,8 +20,38 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Visual English - Learn English Through Images",
-  description: "Break the translation habit. Connect English directly to images and scenarios.",
+  metadataBase: new URL('https://visual-english.vercel.app'),
+  title: {
+    default: "Visual English - Learn English Through Images",
+    template: "%s | Visual English"
+  },
+  description: "Break the translation habit. Connect English directly to images and scenarios. Build native intuition through visual memory.",
+  keywords: ["learn english", "visual learning", "english vocabulary", "language learning", "english through images"],
+  authors: [{ name: "Visual English Team" }],
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://visual-english.vercel.app",
+    title: "Visual English - Learn English Through Images",
+    description: "Connect English directly to images and scenarios. Break the translation habit forever.",
+    siteName: "Visual English",
+    images: [{
+      url: "/og-image.png",
+      width: 1200,
+      height: 630,
+      alt: "Visual English Learning Platform"
+    }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Visual English - Learn English Through Images",
+    description: "Build native intuition through visual memory. Stop translating, start visualizing.",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  }
 };
 
 export default function RootLayout({
