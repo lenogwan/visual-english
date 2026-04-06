@@ -7,6 +7,6 @@ export default function Robots(): Metadata {
       allow: '/',
       disallow: ['/api/', '/admin/', '/profile/'],
     },
-    sitemap: 'https://visual-english.vercel.app/sitemap.xml',
+    sitemap: 'https://queryi.com/sitemap.xml',
   }
 }

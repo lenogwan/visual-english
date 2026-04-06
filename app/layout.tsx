@@ -20,7 +20,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://visual-english.vercel.app'),
+  metadataBase: new URL('https://queryi.com'),
   title: {
     default: "Visual English - Learn English Through Images",
     template: "%s | Visual English"
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://visual-english.vercel.app",
+    url: "https://queryi.com",
     title: "Visual English - Learn English Through Images",
     description: "Connect English directly to images and scenarios. Break the translation habit forever.",
     siteName: "Visual English",
