@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     // Get user settings for daily goal
     const userRows: any[] = await prisma.$queryRaw`
-      SELECT settings FROM User WHERE id = ${userId}
+      SELECT "settings" FROM "User" WHERE "id" = ${userId}
     `
     const settings = userRows[0]?.settings ? JSON.parse(userRows[0].settings) : {}
     const dailyGoal = parseInt(settings.dailyGoal || '20')

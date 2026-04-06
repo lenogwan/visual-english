@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     
     // Use raw query to include settings (bypasses stale Prisma Client)
     const users: any[] = await prisma.$queryRaw`
-      SELECT id, email, name, role, settings, createdAt FROM User WHERE id = ${decoded.userId}
+      SELECT "id", "email", "name", "role", "settings", "createdAt" FROM "User" WHERE "id" = ${decoded.userId}
     `
 
     if (!users || users.length === 0) {

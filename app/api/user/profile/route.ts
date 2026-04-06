@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
     // Use raw query to access settings field (bypasses stale Prisma Client)
     const users: any[] = await prisma.$queryRaw`
-      SELECT id, email, name, role, settings FROM User WHERE id = ${decoded.userId}
+      SELECT "id", "email", "name", "role", "settings" FROM "User" WHERE "id" = ${decoded.userId}
     `
 
     if (!users || users.length === 0) {
@@ -38,7 +38,7 @@ export async function PATCH(request: NextRequest) {
 
     // Fetch current user with raw query
     const users: any[] = await prisma.$queryRaw`
-      SELECT id, email, name, role, password, settings FROM User WHERE id = ${decoded.userId}
+      SELECT "id", "email", "name", "role", "password", "settings" FROM "User" WHERE "id" = ${decoded.userId}
     `
     if (!users || users.length === 0) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
@@ -50,14 +50,14 @@ export async function PATCH(request: NextRequest) {
     const values: any[] = []
 
     if (name !== undefined) {
-      setClauses.push('name = ?')
       values.push(name)
+      setClauses.push(`"name" = $${values.length}`)
     }
 
     if (settings !== undefined) {
       const settingsStr = typeof settings === 'object' ? JSON.stringify(settings) : settings
-      setClauses.push('settings = ?')
       values.push(settingsStr)
+      setClauses.push(`"settings" = $${values.length}`)
     }
 
     // Handle password change
@@ -76,8 +76,8 @@ export async function PATCH(request: NextRequest) {
       }
 
       const hashedPassword = await hash(newPassword, 10)
-      setClauses.push('password = ?')
       values.push(hashedPassword)
+      setClauses.push(`"password" = $${values.length}`)
     }
 
     if (setClauses.length === 0) {
@@ -88,13 +88,13 @@ export async function PATCH(request: NextRequest) {
     const setClause = setClauses.join(', ')
     values.push(decoded.userId)
     await prisma.$executeRawUnsafe(
-      `UPDATE User SET ${setClause} WHERE id = ?`,
+      `UPDATE "User" SET ${setClause} WHERE "id" = $${values.length}`,
       ...values
     )
 
     // Fetch updated user
     const updatedUsers: any[] = await prisma.$queryRaw`
-      SELECT id, email, name, role, settings FROM User WHERE id = ${decoded.userId}
+      SELECT "id", "email", "name", "role", "settings" FROM "User" WHERE "id" = ${decoded.userId}
     `
 
     return NextResponse.json({ user: updatedUsers[0], message: 'Profile updated successfully' })
