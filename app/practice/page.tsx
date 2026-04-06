@@ -5,12 +5,6 @@ import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import SenseSwitcher from '@/components/SenseSwitcher'
-import { Metadata } from 'next'
-
-export const metadata: Metadata = {
-  title: 'Practice Arena',
-  description: 'Test your visual English skills with image-to-word and word-to-image challenges.',
-}
 
 interface Word {
   id: string
