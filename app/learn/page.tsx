@@ -5,7 +5,6 @@ import { useAuth } from '@/lib/auth-context'
 import { useSearchParams } from 'next/navigation'
 import TriadCard from '@/components/TriadCard'
 import ImageSearch from '@/components/ImageSearch'
-import ScenarioBuilder from '@/components/ScenarioBuilder'
 import WordCard from '@/components/WordCard'
 import SenseSwitcher from '@/components/SenseSwitcher'
 
@@ -28,7 +27,7 @@ interface Word {
 function LearnContent() {
   const [words, setWords] = useState<Word[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [activeTab, setActiveTab] = useState<'card' | 'study' | 'images' | 'scenario'>('card')
+  const [activeTab, setActiveTab] = useState<'card' | 'study' | 'images'>('card')
   const [loading, setLoading] = useState(true)
   const [currentSense, setCurrentSense] = useState<Word | null>(null)
   const { user, token } = useAuth()
@@ -38,7 +37,7 @@ function LearnContent() {
   
   // Reset tab if in favorites mode and currently on a hidden tab
   useEffect(() => {
-    if (isFavoritesMode && (activeTab === 'images' || activeTab === 'scenario')) {
+    if (isFavoritesMode && (activeTab === 'images')) {
       setActiveTab('card')
     }
   }, [isFavoritesMode, activeTab])
@@ -202,16 +201,6 @@ function LearnContent() {
               >
                 <span className="text-xl">📸</span> Images
               </button>
-              <button
-                onClick={() => setActiveTab('scenario')}
-                className={`flex-1 py-3 rounded-[1.25rem] font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
-                  activeTab === 'scenario'
-                    ? 'bg-blue-600 text-white shadow-lg translate-y-[-1px]'
-                    : 'text-slate-500 hover:bg-white/50 hover:text-blue-600'
-                }`}
-              >
-                <span className="text-xl">✍️</span> Scenario
-              </button>
             </>
           )}
         </div>
@@ -299,25 +288,6 @@ function LearnContent() {
                 <button
                   onClick={handleNext}
                   className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity"
-                >
-                  Next →
-                </button>
-              </div>
-            </>
-          )}
-          {activeTab === 'scenario' && currentSense && (
-            <>
-              <ScenarioBuilder word={currentSense} />
-              <div className="flex justify-between mt-6">
-                <button
-                  onClick={handlePrev}
-                  className="px-6 py-3 bg-gray-200 rounded-xl font-medium hover:bg-gray-300 transition-colors"
-                >
-                  ← Previous
-                </button>
-                <button
-                  onClick={handleNext}
-                  className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity"
                 >
                   Next →
                 </button>
