@@ -19,7 +19,7 @@ interface Word {
   emotionalConnection?: string | null
 }
 
-const LEVELS = ['ANY', 'A1', 'A2', 'B1']
+const LEVELS = ['ANY', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 const TOPICS = ['ANY', 'General', 'food', 'travel', 'animals', 'technology', 'business', 'health', 'sports', 'education', 'entertainment']
 
 export default function PracticePage() {

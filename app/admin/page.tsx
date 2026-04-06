@@ -57,7 +57,7 @@ async function fetchDefinition(word: string, targetPOS: string, level: string = 
 }
 
 const PAGE_SIZE = 50
-const LEVELS = ['A1', 'A2', 'B1']
+const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 // Default topics kept as fallback
 const DEFAULT_TOPICS = ['General', 'food', 'travel', 'sports', 'work', 'animals']
 const DEFAULT_POS = ['noun', 'verb', 'adjective', 'adverb']
