@@ -118,6 +118,7 @@ export default function AdminPage() {
     partOfSpeech: 'noun',
     category: 'General',
     level: 'A1',
+    tags: [] as string[],
   })
 
   const [autoFilling, setAutoFilling] = useState(false)
@@ -135,6 +136,29 @@ export default function AdminPage() {
       partOfSpeech: word.partOfSpeech || 'noun',
       category: tags[1] || 'General',
       level: word.level || 'A1',
+      tags: tags,
+    }
+  }
+
+  function removeTag(tagToRemove: string) {
+    setFormData(prev => ({
+      ...prev,
+      tags: prev.tags.filter(t => t !== tagToRemove)
+    }))
+  }
+
+  function addTag(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      const input = e.currentTarget
+      const newTag = input.value.trim()
+      if (newTag && !formData.tags.includes(newTag)) {
+        setFormData(prev => ({
+          ...prev,
+          tags: [...prev.tags, newTag]
+        }))
+        input.value = ''
+      }
+      e.preventDefault()
     }
   }
 
@@ -345,7 +369,8 @@ export default function AdminPage() {
           images: images,
           scenarioImages: scenarioImages,
           examples: formData.examples.split('\n').filter(s => s.trim()),
-          tags: [formData.partOfSpeech, formData.category, formData.level, ...tags.filter(t => ![formData.partOfSpeech, formData.category, formData.level].includes(t))],
+          tags: formData.tags,
+          level: formData.level,
         }),
       })
 
@@ -449,6 +474,7 @@ export default function AdminPage() {
           scenarioImages,
           examples: addForm.examples.split('\n').filter(s => s.trim()),
           tags,
+          level: addForm.level,
         }),
       })
 
@@ -992,19 +1018,34 @@ export default function AdminPage() {
               {selectedWord ? (
                 <div className="animate-fadeIn">
                   <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-12 pb-8 border-b border-indigo-100">
-                    <div className="flex-1">
-                      <h2 className="text-6xl font-black text-slate-900 tracking-tighter mb-4">{selectedWord.word}</h2>
-                      <div className="flex flex-wrap gap-2">
-                        <span className="px-3 py-1 bg-indigo-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest leading-none flex items-center">
-                          {selectedWord.level}
-                        </span>
-                        {selectedWord.tags.map((tag, i) => (
-                          <span key={i} className="px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-[10px] font-bold uppercase tracking-wider text-indigo-600">
-                            {tag}
+                      <div className="flex-1">
+                        <h2 className="text-6xl font-black text-slate-900 tracking-tighter mb-4">{selectedWord.word}</h2>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="px-3 py-1 bg-indigo-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest leading-none flex items-center">
+                            {formData.level}
                           </span>
-                        ))}
+                          {formData.tags.map((tag, i) => (
+                            <span key={i} className="px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-[10px] font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-1.5 transition-all hover:bg-white">
+                              {tag}
+                              <button 
+                                onClick={() => removeTag(tag)}
+                                className="text-red-400 hover:text-red-600 transition-colors p-0.5 rounded-full hover:bg-red-50"
+                                title="Remove tag"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                              </button>
+                            </span>
+                          ))}
+                          <div className="relative">
+                            <input
+                              type="text"
+                              placeholder="+ Add tag"
+                              onKeyDown={addTag}
+                              className="px-3 py-1 bg-white border border-dashed border-indigo-200 rounded-full text-[10px] font-bold uppercase tracking-wider text-indigo-400 focus:outline-none focus:border-indigo-500 focus:text-indigo-600 w-24 transition-all"
+                            />
+                          </div>
+                        </div>
                       </div>
-                    </div>
                     <div className="flex gap-3">
                       <button
                         onClick={autoFillWord}
