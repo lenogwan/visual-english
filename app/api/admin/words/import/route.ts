@@ -36,23 +36,17 @@ export async function POST(request: NextRequest) {
     // Sequential processing for safety (SQLite transactions)
     for (const item of words) {
       const wordStr = String(item.word || '').trim()
-      const posStr = String(item.partOfSpeech || 'unknown').toLowerCase().trim()
+      const senseIndex = parseInt(item.senseIndex || '0')
       
       if (!wordStr) {
         skippedCount++
         continue
       }
 
-      const existing = await prisma.word.findFirst({
-        where: { 
-          word: { equals: wordStr },
-          partOfSpeech: { equals: posStr }
-        }
-      })
-
       const data = {
         word: wordStr,
-        partOfSpeech: posStr,
+        senseIndex,
+        partOfSpeech: String(item.partOfSpeech || 'unknown').toLowerCase().trim(),
         phonetic: item.phonetic || null,
         meaning: item.meaning || null,
         scenario: item.scenario || null,
@@ -64,21 +58,36 @@ export async function POST(request: NextRequest) {
         examples: JSON.stringify(item.examples || []),
       }
 
-      if (existing) {
-        if (override) {
-          await prisma.word.update({
-            where: { id: existing.id },
+      if (override) {
+        await prisma.word.upsert({
+          where: {
+            word_senseIndex: {
+              word: wordStr,
+              senseIndex,
+            }
+          },
+          update: data,
+          create: data,
+        })
+        updatedCount++ // Treating upsert as update/create
+      } else {
+        const existing = await prisma.word.findUnique({
+          where: {
+            word_senseIndex: {
+              word: wordStr,
+              senseIndex,
+            }
+          }
+        })
+
+        if (existing) {
+          skippedCount++
+        } else {
+          await prisma.word.create({
             data
           })
-          updatedCount++
-        } else {
-          skippedCount++
+          createdCount++
         }
-      } else {
-        await (prisma.word as any).create({
-          data
-        })
-        createdCount++
       }
     }
 
