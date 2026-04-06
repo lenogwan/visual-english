@@ -7,14 +7,8 @@ import TriadCard from '@/components/TriadCard'
 import ImageSearch from '@/components/ImageSearch'
 import WordCard from '@/components/WordCard'
 import SenseSwitcher from '@/components/SenseSwitcher'
-import { Metadata } from 'next'
 
-export const metadata: Metadata = {
-  title: 'Learn',
-  description: 'Explore new English words through visual cards and interactive study modes.',
-}
 
-interface Word {
   id: string
   word: string
   phonetic: string | null
