@@ -29,9 +29,17 @@ export default function Navbar() {
               Learn
             </Link>
             {user && (
-              <Link href="/quiz" className="text-slate-600 hover:text-indigo-600 font-semibold transition-all hover:scale-105">
-                Quizzes
-              </Link>
+              <>
+                <Link href="/search" className="text-slate-600 hover:text-indigo-600 font-semibold transition-all hover:scale-105 flex items-center gap-1.5">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  Search
+                </Link>
+                <Link href="/quiz" className="text-slate-600 hover:text-indigo-600 font-semibold transition-all hover:scale-105">
+                  Quizzes
+                </Link>
+              </>
             )}
             <Link href="/practice" className="text-slate-600 hover:text-indigo-600 font-semibold transition-all hover:scale-105">
               Practice
@@ -103,7 +111,10 @@ export default function Navbar() {
               </Link>
               <Link href="/learn" className="block px-4 py-2 text-slate-700 font-bold hover:text-indigo-600">Learn</Link>
               {user && (
-                <Link href="/quiz" className="block px-4 py-2 text-slate-700 font-bold hover:text-indigo-600">Quizzes</Link>
+                <>
+                  <Link href="/search" className="block px-4 py-2 text-slate-700 font-bold hover:text-indigo-600">Search</Link>
+                  <Link href="/quiz" className="block px-4 py-2 text-slate-700 font-bold hover:text-indigo-600">Quizzes</Link>
+                </>
               )}
               <Link href="/practice" className="block px-4 py-2 text-slate-700 font-bold hover:text-indigo-600">Practice</Link>
               <div className="border-t border-slate-100 pt-4 px-4">

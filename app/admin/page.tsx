@@ -116,7 +116,6 @@ export default function AdminPage() {
     scenarioImages: '',
     examples: '',
     partOfSpeech: 'noun',
-    category: 'General',
     level: 'A1',
     tags: [] as string[],
   })
@@ -134,7 +133,6 @@ export default function AdminPage() {
       scenarioImages: word.scenarioImages.join('\n'),
       examples: (word.examples || []).join('\n'),
       partOfSpeech: word.partOfSpeech || 'noun',
-      category: tags[1] || 'General',
       level: word.level || 'A1',
       tags: tags,
     }
@@ -172,8 +170,8 @@ export default function AdminPage() {
     scenarioImages: '',
     examples: '',
     partOfSpeech: 'noun',
-    category: 'General',
     level: 'A1',
+    tags: [] as string[],
   })
 
   const resetAddForm = () => {
@@ -187,8 +185,8 @@ export default function AdminPage() {
       scenarioImages: '',
       examples: '',
       partOfSpeech: 'noun',
-      category: 'General',
       level: 'A1',
+      tags: [],
     })
   }
 
@@ -454,7 +452,7 @@ export default function AdminPage() {
     try {
       const images = addForm.images.split('\n').filter((url) => url.trim())
       const scenarioImages = addForm.scenarioImages.split('\n').filter((url) => url.trim())
-      const tags = [addForm.partOfSpeech, addForm.category, addForm.level]
+      const tags = addForm.tags
 
       const res = await fetch('/api/words', {
         method: 'POST',
@@ -1066,7 +1064,7 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 ml-1">Part of Speech</label>
                       <input
@@ -1081,17 +1079,14 @@ export default function AdminPage() {
                       </datalist>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 ml-1">Category</label>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 ml-1">Phonetic</label>
                       <input
-                        list="category-options"
-                        value={formData.category}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        type="text"
+                        value={formData.phonetic}
+                        onChange={(e) => setFormData({ ...formData, phonetic: e.target.value })}
                         className="w-full p-4 bg-white/60 border-2 border-indigo-100/50 rounded-2xl focus:border-indigo-500 focus:outline-none text-slate-800 placeholder-slate-400 transition-all font-medium"
-                        placeholder="General, food, etc."
+                        placeholder="/fəˈnet.ɪk/"
                       />
-                      <datalist id="category-options">
-                        {dynamicTopics.map(t => <option key={t} value={t} />)}
-                      </datalist>
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 ml-1">Level</label>
@@ -1106,27 +1101,15 @@ export default function AdminPage() {
                   </div>
 
                   <div className="space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 ml-1">Phonetic</label>
-                        <input
-                          type="text"
-                          value={formData.phonetic}
-                          onChange={(e) => setFormData({ ...formData, phonetic: e.target.value })}
-                          className="w-full p-4 bg-white/60 border-2 border-indigo-100/50 rounded-2xl focus:border-indigo-500 focus:outline-none text-slate-800 placeholder-slate-400 transition-all font-medium"
-                          placeholder="/fəˈnet.ɪk/"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 ml-1">Meaning</label>
-                        <input
-                          type="text"
-                          value={formData.meaning}
-                          onChange={(e) => setFormData({ ...formData, meaning: e.target.value })}
-                          className="w-full p-4 bg-white/60 border-2 border-indigo-100/50 rounded-2xl focus:border-indigo-500 focus:outline-none text-slate-800 placeholder-slate-400 transition-all font-medium"
-                          placeholder="Primary definition..."
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 ml-1">Meaning</label>
+                      <input
+                        type="text"
+                        value={formData.meaning}
+                        onChange={(e) => setFormData({ ...formData, meaning: e.target.value })}
+                        className="w-full p-4 bg-white/60 border-2 border-indigo-100/50 rounded-2xl focus:border-indigo-500 focus:outline-none text-slate-800 placeholder-slate-400 transition-all font-medium"
+                        placeholder="Primary definition..."
+                      />
                     </div>
 
                     <div>
@@ -1463,83 +1446,74 @@ export default function AdminPage() {
               <div className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-4">Word Registry</div>
               <h2 className="text-4xl font-black text-slate-900 tracking-tighter mb-10">Add New Word</h2>
               
-              <div className="space-y-8">
-                <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-1">Word *</label>
-                  <div className="flex gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-1">Word *</label>
                     <input
                       type="text"
                       value={addForm.word}
                       onChange={(e) => setAddForm({ ...addForm, word: e.target.value })}
-                      className="flex-1 p-5 bg-slate-50 border-2 border-indigo-50 rounded-[1.5rem] focus:border-indigo-400 focus:outline-none text-slate-900 placeholder-slate-300 transition-all font-bold tracking-wide"
+                      className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-900 placeholder-slate-300 transition-all font-bold tracking-wide"
                       placeholder="Enter word..."
                     />
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (!addForm.word.trim()) return
-                        setAutoFilling(true)
-                        try {
-                          const result = await fetchDefinition(addForm.word, addForm.partOfSpeech, addForm.level)
-                          if (!result) throw new Error('Autofill failed')
-                          setAddForm(prev => ({
-                            ...prev,
-                            phonetic: result.phonetic || prev.phonetic,
-                            meaning: result.meaning || prev.meaning,
-                            examples: Array.isArray(result.examples) ? result.examples.join('\n') : prev.examples,
-                            scenario: result.scenario || prev.scenario,
-                            emotionalConnection: result.emotionalConnection || prev.emotionalConnection,
-                          }))
-                          setMessage({ type: 'success', text: '✨ Definition synthesized!' })
-                          setTimeout(() => setMessage(null), 3000)
-                        } catch (error) {
-                          setMessage({ type: 'error', text: 'Synthesis failed' })
-                        } finally {
-                          setAutoFilling(false)
-                        }
-                      }}
-                      disabled={autoFilling || !addForm.word.trim()}
-                      className="px-8 py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-50"
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Part of Speech</label>
+                    <input
+                      list="pos-add-options"
+                      value={addForm.partOfSpeech}
+                      onChange={(e) => setAddForm({ ...addForm, partOfSpeech: e.target.value })}
+                      className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-700 text-xs font-bold uppercase tracking-widest transition-all"
+                      placeholder="noun, verb..."
+                    />
+                    <datalist id="pos-add-options">
+                      {dynamicPOS.map(opt => <option key={opt} value={opt} />)}
+                    </datalist>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Level</label>
+                    <select
+                      value={addForm.level}
+                      onChange={(e) => setAddForm({ ...addForm, level: e.target.value })}
+                      className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-700 text-xs font-bold uppercase tracking-widest transition-all cursor-pointer"
                     >
-                      {autoFilling ? 'Synthesizing...' : '✨ AI Autofill'}
-                    </button>
+                      {LEVELS.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {[
-                    { label: 'Part of Speech', field: 'partOfSpeech', options: dynamicPOS, isCreatable: true },
-                    { label: 'Category', field: 'category', options: dynamicTopics, isCreatable: true },
-                    { label: 'Level', field: 'level', options: LEVELS, isCreatable: false }
-                  ].map((sel) => (
-                    <div key={sel.field}>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">{sel.label}</label>
-                      {sel.isCreatable ? (
-                        <>
-                          <input
-                            list={`${sel.field}-add-options`}
-                            value={(addForm as any)[sel.field]}
-                            onChange={(e) => setAddForm({ ...addForm, [sel.field]: e.target.value })}
-                            className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-700 text-xs font-bold uppercase tracking-widest transition-all"
-                            placeholder={`Pick or type...`}
-                          />
-                          <datalist id={`${sel.field}-add-options`}>
-                            {sel.options.map(opt => <option key={opt} value={opt} />)}
-                          </datalist>
-                        </>
-                      ) : (
-                        <select
-                          value={(addForm as any)[sel.field]}
-                          onChange={(e) => setAddForm({ ...addForm, [sel.field]: e.target.value })}
-                          className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-700 text-xs font-bold uppercase tracking-widest transition-all cursor-pointer"
-                        >
-                          {sel.options.map((opt) => (
-                            <option key={opt} value={opt}>{opt}</option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
-                  ))}
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!addForm.word.trim()) return
+                      setAutoFilling(true)
+                      try {
+                        const result = await fetchDefinition(addForm.word, addForm.partOfSpeech, addForm.level)
+                        if (!result) throw new Error('Autofill failed')
+                        setAddForm(prev => ({
+                          ...prev,
+                          phonetic: result.phonetic || prev.phonetic,
+                          meaning: result.meaning || prev.meaning,
+                          examples: Array.isArray(result.examples) ? result.examples.join('\n') : prev.examples,
+                          scenario: result.scenario || prev.scenario,
+                          emotionalConnection: result.emotionalConnection || prev.emotionalConnection,
+                        }))
+                        setMessage({ type: 'success', text: '✨ Definition synthesized!' })
+                        setTimeout(() => setMessage(null), 3000)
+                      } catch (error) {
+                        setMessage({ type: 'error', text: 'Synthesis failed' })
+                      } finally {
+                        setAutoFilling(false)
+                      }
+                    }}
+                    disabled={autoFilling || !addForm.word.trim()}
+                    className="px-8 py-4 bg-indigo-600 text-white rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    {autoFilling ? 'Synthesizing...' : '✨ AI Autofill'}
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1549,7 +1523,7 @@ export default function AdminPage() {
                       type="text"
                       value={addForm.phonetic}
                       onChange={(e) => setAddForm({ ...addForm, phonetic: e.target.value })}
-                      className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-800 transition-all font-medium"
+                      className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-700 placeholder-slate-300 transition-all font-medium"
                       placeholder="/fəˈnet.ɪk/"
                     />
                   </div>
@@ -1559,8 +1533,40 @@ export default function AdminPage() {
                       type="text"
                       value={addForm.meaning}
                       onChange={(e) => setAddForm({ ...addForm, meaning: e.target.value })}
-                      className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-800 transition-all font-medium"
+                      className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-700 placeholder-slate-300 transition-all font-medium"
                       placeholder="Primary definition..."
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 ml-1">Tags (Press Enter to add)</label>
+                  <div className="flex flex-wrap gap-2 p-4 bg-slate-50 border-2 border-indigo-50 rounded-[1.5rem]">
+                    {addForm.tags.map((tag, i) => (
+                      <span key={i} className="px-3 py-1 bg-white border border-indigo-100 rounded-full text-[10px] font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-2">
+                        {tag}
+                        <button 
+                          onClick={() => setAddForm(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tag) }))}
+                          className="text-red-400 hover:text-red-600 transition-colors"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                    <input
+                      type="text"
+                      placeholder="+ Add tag..."
+                      className="bg-transparent border-none focus:outline-none text-[10px] font-bold uppercase tracking-wider text-slate-600 w-24"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const val = e.currentTarget.value.trim()
+                          if (val && !addForm.tags.includes(val)) {
+                            setAddForm(prev => ({ ...prev, tags: [...prev.tags, val] }))
+                            e.currentTarget.value = ''
+                          }
+                          e.preventDefault()
+                        }
+                      }}
                     />
                   </div>
                 </div>
