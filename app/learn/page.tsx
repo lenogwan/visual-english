@@ -9,6 +9,7 @@ import WordCard from '@/components/WordCard'
 import SenseSwitcher from '@/components/SenseSwitcher'
 
 
+  interface Word {
   id: string
   word: string
   phonetic: string | null
@@ -22,6 +23,7 @@ import SenseSwitcher from '@/components/SenseSwitcher'
   tags: string[]
   partOfSpeech: string
   level: string
+}
 }
 
 function LearnContent() {
