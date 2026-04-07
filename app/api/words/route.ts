@@ -92,8 +92,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { 
       word, 
-      partOfSpeech,
-      senseIndex,
+      partOfSpeech, // Expecting this to be an array now
+      // senseIndex is managed internally now
       phonetic, 
       meaning, 
       exampleSentence, 
@@ -110,27 +110,55 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Word is required' }, { status: 400 })
     }
 
-    const newWord = await (prisma.word as any).create({
-      data: {
-        word,
-        partOfSpeech: partOfSpeech || (tags?.[0]) || 'unknown',
-        senseIndex: senseIndex || 0,
-        phonetic: phonetic || null,
-        meaning: meaning || null,
-        exampleSentence: exampleSentence || null,
-        emotionalConnection: emotionalConnection || null,
-        scenario: scenario || null,
-        images: JSON.stringify(images || []),
-        scenarioImages: JSON.stringify(scenarioImages || []),
-        tags: JSON.stringify(tags || []),
-        level: level || 'A1',
-        examples: JSON.stringify(examples || []),
-      },
-    })
+    // Ensure partOfSpeech is an array, default to ["unknown"] if not provided or invalid
+    let partsToProcess: string[];
+    if (Array.isArray(body.partOfSpeech)) {
+      partsToProcess = body.partOfSpeech.filter(p => typeof p === 'string' && p.trim() !== ''); // Filter out empty strings
+      if (partsToProcess.length === 0) partsToProcess = ['unknown']; // Handle case where array was empty or contained only empty strings
+    } else if (typeof body.partOfSpeech === 'string' && body.partOfSpeech.trim() !== '') {
+      // If it's a single non-empty string, treat it as the only part of speech
+      partsToProcess = [body.partOfSpeech.trim()];
+    } else if (tags && tags.length > 0 && typeof tags[0] === 'string' && tags[0].trim() !== '') {
+      // Fallback to the first tag if partOfSpeech is missing or default/empty
+      partsToProcess = [tags[0].trim()];
+    } else {
+      // Default if nothing else is available
+      partsToProcess = ['unknown'];
+    }
 
-    return NextResponse.json({ success: true, word: newWord })
+    const createdWords = [];
+    for (let i = 0; i < partsToProcess.length; i++) {
+      const currentPartOfSpeech = partsToProcess[i];
+      const currentSenseIndex = i; // Increment senseIndex for each part of speech
+
+      const newWordEntry = await prisma.word.create({
+        data: {
+          word,
+          partOfSpeech: currentPartOfSpeech, // Assign the string directly for Json type
+          senseIndex: currentSenseIndex,
+          phonetic: phonetic || null,
+          meaning: meaning || null,
+          exampleSentence: exampleSentence || null,
+          emotionalConnection: emotionalConnection || null,
+          scenario: scenario || null,
+          images: JSON.stringify(images || []),
+          scenarioImages: JSON.stringify(scenarioImages || []),
+          tags: JSON.stringify(tags || []),
+          level: level || 'A1',
+          examples: JSON.stringify(examples || []),
+        },
+      });
+      createdWords.push(newWordEntry);
+    }
+
+    // Return the first created word if only one, or the array if multiple
+    return NextResponse.json({ success: true, word: createdWords.length === 1 ? createdWords[0] : createdWords });
   } catch (error) {
     console.error('Create word error:', error)
+    // Catch unique constraint errors specifically
+    if (error instanceof Error && error.message.includes('unique constraint failed')) {
+       return NextResponse.json({ error: 'Word with this part of speech and sense index already exists.' }, { status: 409 });
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

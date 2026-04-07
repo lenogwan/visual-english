@@ -46,7 +46,9 @@ export async function POST(request: NextRequest) {
       const data = {
         word: wordStr,
         senseIndex,
-        partOfSpeech: String(item.partOfSpeech || 'unknown').toLowerCase().trim(),
+        partOfSpeech: Array.isArray(item.partOfSpeech)
+  ? item.partOfSpeech.map((pos: any) => String(pos).toLowerCase().trim()).filter(Boolean)
+  : (String(item.partOfSpeech || 'unknown').toLowerCase().trim() === 'unknown' ? ['unknown'] : [String(item.partOfSpeech).toLowerCase().trim()]),
         phonetic: item.phonetic || null,
         meaning: item.meaning || null,
         scenario: item.scenario || null,
