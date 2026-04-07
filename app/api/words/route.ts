@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     if (search) {
       where.word = { contains: search }
     }
-    
+
     if (level && level !== 'All' && level !== 'ANY') {
       where.level = level
     }
@@ -42,16 +42,16 @@ export async function GET(request: NextRequest) {
     // Exclude learned words if requested
     const excludeLearned = searchParams.get('excludeLearned') === 'true'
     if (excludeLearned) {
-        const auth = await getAuth(request)
-        if (auth) {
-            where.progress = {
-                none: {
-                    userId: auth.id,
-                    learned: true,
-                    masteryLevel: { gte: 5 } // Consider 'mastered' at level 5
-                }
-            }
+      const auth = await getAuth(request)
+      if (auth) {
+        where.progress = {
+          none: {
+            userId: auth.id,
+            learned: true,
+            masteryLevel: { gte: 5 } // Consider 'mastered' at level 5
+          }
         }
+      }
     }
 
     const [words, total] = await Promise.all([
@@ -67,9 +67,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       words: words.map((w: any) => ({
         ...w,
-        images: JSON.parse(w.images),
-        scenarioImages: JSON.parse(w.scenarioImages),
-        tags: JSON.parse(w.tags),
+        partOfSpeech: Array.isArray(w.partOfSpeech) ? (w.partOfSpeech[0] || 'word') : (w.partOfSpeech || 'word'),
+        images: JSON.parse(w.images || '[]'),
+        scenarioImages: JSON.parse(w.scenarioImages || '[]'),
+        tags: JSON.parse(w.tags || '[]'),
         examples: JSON.parse(w.examples || '[]'),
       })),
       total,
@@ -90,20 +91,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { 
-      word, 
+    const {
+      word,
       partOfSpeech, // Expecting this to be an array now
       // senseIndex is managed internally now
-      phonetic, 
-      meaning, 
-      exampleSentence, 
-      emotionalConnection, 
-      scenario, 
-      images, 
-      scenarioImages, 
+      phonetic,
+      meaning,
+      exampleSentence,
+      emotionalConnection,
+      scenario,
+      images,
+      scenarioImages,
       tags,
       level,
-      examples 
+      examples
     } = body
 
     if (!word) {
@@ -113,7 +114,7 @@ export async function POST(request: NextRequest) {
     // Ensure partOfSpeech is an array, default to ["unknown"] if not provided or invalid
     let partsToProcess: string[];
     if (Array.isArray(body.partOfSpeech)) {
-      partsToProcess = body.partOfSpeech.filter(p => typeof p === 'string' && p.trim() !== ''); // Filter out empty strings
+      partsToProcess = body.partOfSpeech.filter((p: any) => typeof p === 'string' && p.trim() !== ''); // Filter out empty strings
       if (partsToProcess.length === 0) partsToProcess = ['unknown']; // Handle case where array was empty or contained only empty strings
     } else if (typeof body.partOfSpeech === 'string' && body.partOfSpeech.trim() !== '') {
       // If it's a single non-empty string, treat it as the only part of speech
@@ -157,7 +158,7 @@ export async function POST(request: NextRequest) {
     console.error('Create word error:', error)
     // Catch unique constraint errors specifically
     if (error instanceof Error && error.message.includes('unique constraint failed')) {
-       return NextResponse.json({ error: 'Word with this part of speech and sense index already exists.' }, { status: 409 });
+      return NextResponse.json({ error: 'Word with this part of speech and sense index already exists.' }, { status: 409 });
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
