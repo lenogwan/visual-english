@@ -9,7 +9,7 @@ import WordCard from '@/components/WordCard'
 import SenseSwitcher from '@/components/SenseSwitcher'
 
 
-  interface Word {
+interface Word {
   id: string
   word: string
   phonetic: string | null
@@ -24,7 +24,6 @@ import SenseSwitcher from '@/components/SenseSwitcher'
   partOfSpeech: string
   level: string
 }
-}
 
 function LearnContent() {
   const [words, setWords] = useState<Word[]>([])
@@ -36,7 +35,7 @@ function LearnContent() {
   const searchParams = useSearchParams()
   const mode = searchParams.get('mode')
   const isFavoritesMode = mode === 'favorites'
-  
+
   // Reset tab if in favorites mode and currently on a hidden tab
   useEffect(() => {
     if (isFavoritesMode && (activeTab === 'images')) {
@@ -75,7 +74,7 @@ function LearnContent() {
         const data = await res.json()
         allWords = data.words || []
       }
-      
+
       // Group by word string to ensure each word appears only once
       const uniqueWordsMap = new Map()
       allWords.forEach((item: any) => {
@@ -84,9 +83,9 @@ function LearnContent() {
           uniqueWordsMap.set(item.word.toLowerCase(), item)
         }
       })
-      
+
       const uniqueWords = Array.from(uniqueWordsMap.values())
-      
+
       // For favorites mode, show ALL. For standard mode, shuffle and limit to goal.
       if (isFavoritesMode) {
         setWords(uniqueWords)
@@ -108,7 +107,7 @@ function LearnContent() {
   // Track progress when word changes
   useEffect(() => {
     if (!token || !words[currentIndex]) return
-    
+
     const trackProgress = async () => {
       try {
         await fetch('/api/progress', {
@@ -173,21 +172,19 @@ function LearnContent() {
         <div className="flex gap-2 mb-6 glass-card bg-white/60 rounded-3xl p-1.5 shadow-md border border-indigo-100">
           <button
             onClick={() => setActiveTab('card')}
-            className={`flex-1 py-3 rounded-[1.25rem] font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
-              activeTab === 'card'
+            className={`flex-1 py-3 rounded-[1.25rem] font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${activeTab === 'card'
                 ? 'bg-indigo-600 text-white shadow-lg translate-y-[-1px]'
                 : 'text-slate-500 hover:bg-white/50 hover:text-indigo-600'
-            }`}
+              }`}
           >
             <span className="text-xl">🎴</span> Triad Card
           </button>
           <button
             onClick={() => setActiveTab('study')}
-            className={`flex-1 py-3 rounded-[1.25rem] font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
-              activeTab === 'study'
+            className={`flex-1 py-3 rounded-[1.25rem] font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${activeTab === 'study'
                 ? 'bg-purple-600 text-white shadow-lg translate-y-[-1px]'
                 : 'text-slate-500 hover:bg-white/50 hover:text-purple-600'
-            }`}
+              }`}
           >
             <span className="text-xl">📚</span> Study
           </button>
@@ -195,11 +192,10 @@ function LearnContent() {
             <>
               <button
                 onClick={() => setActiveTab('images')}
-                className={`flex-1 py-3 rounded-[1.25rem] font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
-                  activeTab === 'images'
+                className={`flex-1 py-3 rounded-[1.25rem] font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${activeTab === 'images'
                     ? 'bg-pink-600 text-white shadow-lg translate-y-[-1px]'
                     : 'text-slate-500 hover:bg-white/50 hover:text-pink-600'
-                }`}
+                  }`}
               >
                 <span className="text-xl">📸</span> Images
               </button>
@@ -211,7 +207,7 @@ function LearnContent() {
         <div className="relative flex items-center justify-center mb-10 p-2 glass-card bg-white/40 rounded-full border border-indigo-50/50 min-h-[56px]">
           {/* Centered Session Context */}
           <div className="flex items-center gap-3 px-6">
-             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-r border-slate-200 pr-3">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-r border-slate-200 pr-3">
               Word {currentIndex + 1} / {words.length}
             </span>
             <span className="text-[10px] font-black text-indigo-500 tracking-wider">
@@ -233,10 +229,10 @@ function LearnContent() {
           {/* Right-aligned SenseSwitcher (only if multiple senses exist) */}
           <div className="absolute right-2 top-1/2 -translate-y-1/2">
             {currentSense && (
-              <SenseSwitcher 
-                word={currentSense.word} 
-                currentId={currentSense.id} 
-                onSenseSelect={(sense: any) => setCurrentSense(sense)} 
+              <SenseSwitcher
+                word={currentSense.word}
+                currentId={currentSense.id}
+                onSenseSelect={(sense: any) => setCurrentSense(sense)}
                 theme="indigo"
               />
             )}
@@ -309,11 +305,10 @@ function LearnContent() {
               <button
                 key={w.id}
                 onClick={() => setCurrentIndex(idx)}
-                className={`px-5 py-2 rounded-xl font-bold text-sm transition-all duration-300 ${
-                  idx === currentIndex
+                className={`px-5 py-2 rounded-xl font-bold text-sm transition-all duration-300 ${idx === currentIndex
                     ? 'bg-indigo-600 text-white shadow-lg scale-105'
                     : 'bg-white border text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 border-indigo-100'
-                }`}
+                  }`}
               >
                 {w.word}
               </button>
