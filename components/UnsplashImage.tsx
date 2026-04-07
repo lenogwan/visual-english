@@ -1,5 +1,6 @@
 'use client'
 
+import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 
 interface UnsplashImageProps {
@@ -13,14 +14,14 @@ export default function UnsplashImage({ word, className = '', alt = '', fallback
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   // next/image handles errors differently, so we might not need a separate error state here
-  
+
   useEffect(() => {
     // If a fallbackUrl is provided, we skip the Unsplash search
     if (fallbackUrl || !word) {
       if (loading) setLoading(false);
       return;
     }
-    
+
     // Check cache
     const cached = localStorage.getItem(`unsplash_${word}`)
     if (cached) {
@@ -63,19 +64,19 @@ export default function UnsplashImage({ word, className = '', alt = '', fallback
         layout="fill" // Use fill to make it responsive within the container
         objectFit="cover" // Or 'contain', 'fill', 'scale-down' depending on desired behavior
         className={`${className} ${loading && !fallbackUrl ? 'hidden' : ''}`} // Hide the image while loading placeholder text is shown
-        // onError callback is handled by next/image's internal mechanisms. 
-        // If you need custom error handling (e.g., showing a specific error image), 
-        // you might need to use a combination of state and conditionally rendering.
-        // For now, rely on the src fallback.
+      // onError callback is handled by next/image's internal mechanisms. 
+      // If you need custom error handling (e.g., showing a specific error image), 
+      // you might need to use a combination of state and conditionally rendering.
+      // For now, rely on the src fallback.
       />
       {/* Fallback image if neither fallbackUrl nor fetched imageUrl is available */}
       {isPlaceholder && !loading && (
-         <img 
-             src={src} // Using standard img for placeholder as next/image might not handle placeholder src well
-             alt={alt || word}
-             className={className}
-             // onError is less critical for a placeholder, but can be added if needed
-         />
+        <img
+          src={src} // Using standard img for placeholder as next/image might not handle placeholder src well
+          alt={alt || word}
+          className={className}
+        // onError is less critical for a placeholder, but can be added if needed
+        />
       )}
     </div>
   )
