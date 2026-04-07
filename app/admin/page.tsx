@@ -8,6 +8,7 @@ interface Word {
   id: string
   word: string
   partOfSpeech: string
+  category?: string
   senseIndex: number
   phonetic: string | null
   meaning: string | null
@@ -45,7 +46,7 @@ async function fetchDefinition(word: string, targetPOS: string, level: string = 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ word: word.trim(), partOfSpeech: targetPOS, level })
     })
-    
+
     if (response.ok) {
       return await response.json()
     }
@@ -91,14 +92,14 @@ export default function AdminPage() {
   const [importWords, setImportWords] = useState<any[]>([])
   const [overrideExisting, setOverrideExisting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  
+
   // Quiz form state
   const [quizTitle, setQuizTitle] = useState('')
   const [quizDescription, setQuizDescription] = useState('')
   const [quizType, setQuizType] = useState('image-to-word')
   const [quizWordIds, setQuizWordIds] = useState<string[]>([])
   const [showAddQuizModal, setShowAddQuizModal] = useState(false)
-  
+
   // Add user form fields
   const [addUserForm, setAddUserForm] = useState({
     email: '',
@@ -106,10 +107,11 @@ export default function AdminPage() {
     name: '',
     role: 'User',
   })
-  
+
   const [formData, setFormData] = useState({
     phonetic: '',
     meaning: '',
+    category: '',
     scenario: '',
     emotionalConnection: '',
     images: '',
@@ -127,6 +129,7 @@ export default function AdminPage() {
     return {
       phonetic: word.phonetic || '',
       meaning: word.meaning || '',
+      category: word.category || tags[1] || '',
       scenario: word.scenario || '',
       emotionalConnection: word.emotionalConnection || '',
       images: word.images.join('\n'),
@@ -164,6 +167,7 @@ export default function AdminPage() {
     word: '',
     phonetic: '',
     meaning: '',
+    category: '',
     scenario: '',
     emotionalConnection: '',
     images: '',
@@ -179,6 +183,7 @@ export default function AdminPage() {
       word: '',
       phonetic: '',
       meaning: '',
+      category: '',
       scenario: '',
       emotionalConnection: '',
       images: '',
@@ -200,7 +205,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (loading) return
-    
+
     if (!user) {
       router.push('/login')
     } else if (user.role !== 'admin' && user.role !== 'Admin' && user.role !== 'Teacher' && user.role !== 'teacher') {
@@ -210,7 +215,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!user || (user.role !== 'admin' && user.role !== 'Admin' && user.role !== 'Teacher' && user.role !== 'teacher')) return
-    
+
     setLoading(true)
     if (activeTab === 'words') {
       fetchWords()
@@ -343,13 +348,13 @@ export default function AdminPage() {
 
   async function updateWord() {
     if (!selectedWord || !token) return
-    
+
     setSaving(true)
     try {
       const images = formData.images.split('\n').filter((url) => url.trim())
       const scenarioImages = formData.scenarioImages.split('\n').filter((url) => url.trim())
       const tags = [formData.partOfSpeech, formData.category, formData.level]
-      
+
       const res = await fetch(`/api/words/${selectedWord.id}`, {
         method: 'PUT',
         headers: {
@@ -391,7 +396,7 @@ export default function AdminPage() {
   async function deleteWord() {
     if (!selectedWord || !token) return
     if (!confirm(`Are you sure you want to delete "${selectedWord.word}"?`)) return
-    
+
     setSaving(true)
     try {
       const res = await fetch(`/api/words?id=${selectedWord.id}`, {
@@ -417,12 +422,12 @@ export default function AdminPage() {
 
   async function autoFillWord() {
     if (!selectedWord || !token) return
-    
+
     setAutoFilling(true)
     try {
       const word = selectedWord.word
       const result = await fetchDefinition(word, formData.partOfSpeech, formData.level)
-      
+
       if (!result) {
         throw new Error('Failed to fetch definition')
       }
@@ -447,12 +452,12 @@ export default function AdminPage() {
 
   async function addWord() {
     if (!addForm.word.trim() || !token) return
-    
+
     setSaving(true)
     try {
       const images = addForm.images.split('\n').filter((url) => url.trim())
       const scenarioImages = addForm.scenarioImages.split('\n').filter((url) => url.trim())
-      const tags = addForm.tags
+      const tags = [addForm.partOfSpeech, addForm.category, addForm.level]
 
       const res = await fetch('/api/words', {
         method: 'POST',
@@ -524,7 +529,7 @@ export default function AdminPage() {
   async function deleteUser(userId: string) {
     if (!token) return
     if (!confirm('Are you sure you want to delete this user?')) return
-    
+
     setSaving(true)
     try {
       const res = await fetch(`/api/admin/users/${userId}`, {
@@ -555,7 +560,7 @@ export default function AdminPage() {
       alert('Password must be at least 6 characters.')
       return
     }
-    
+
     setSaving(true)
     try {
       const res = await fetch(`/api/admin/users/${userId}/password`, {
@@ -583,7 +588,7 @@ export default function AdminPage() {
 
   async function addUser() {
     if (!addUserForm.email.trim() || !addUserForm.password || !token) return
-    
+
     setSaving(true)
     try {
       const res = await fetch('/api/auth/register', {
@@ -621,7 +626,7 @@ export default function AdminPage() {
   async function deleteQuiz(quizId: string) {
     if (!token) return
     if (!confirm('Are you sure you want to delete this quiz?')) return
-    
+
     setSaving(true)
     try {
       const res = await fetch(`/api/quiz?id=${quizId}`, {
@@ -655,7 +660,7 @@ export default function AdminPage() {
 
   async function createQuiz() {
     if (!quizTitle.trim() || !quizWordIds.length || !token) return
-    
+
     setSaving(true)
     try {
       const res = await fetch('/api/quiz', {
@@ -742,7 +747,7 @@ export default function AdminPage() {
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     if (!file) return
-    
+
     const reader = new FileReader()
     reader.onload = async (e) => {
       const text = e.target?.result as string
@@ -802,9 +807,9 @@ export default function AdminPage() {
       })
       const data = await res.json()
       if (res.ok) {
-        setMessage({ 
-          type: 'success', 
-          text: `Success! Created: ${data.created}, Updated: ${data.updated}, Skipped: ${data.skipped}` 
+        setMessage({
+          type: 'success',
+          text: `Success! Created: ${data.created}, Updated: ${data.updated}, Skipped: ${data.skipped}`
         })
         setShowImportModal(false)
         fetchWords()
@@ -842,27 +847,24 @@ export default function AdminPage() {
             <div className="flex gap-1 p-1 bg-white/40 rounded-2xl border border-indigo-100 shadow-inner">
               <button
                 onClick={() => setActiveTab('words')}
-                className={`px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${
-                  activeTab === 'words' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:text-indigo-600 hover:bg-white/50'
-                }`}
+                className={`px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${activeTab === 'words' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:text-indigo-600 hover:bg-white/50'
+                  }`}
               >
                 Word Library
               </button>
               {(user?.role === 'admin' || user?.role === 'Admin') && (
                 <button
                   onClick={() => setActiveTab('users')}
-                  className={`px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${
-                    activeTab === 'users' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:text-indigo-600 hover:bg-white/50'
-                  }`}
+                  className={`px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${activeTab === 'users' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:text-indigo-600 hover:bg-white/50'
+                    }`}
                 >
                   Users
                 </button>
               )}
               <button
                 onClick={() => setActiveTab('quizzes')}
-                className={`px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${
-                  activeTab === 'quizzes' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:text-indigo-600 hover:bg-white/50'
-                }`}
+                className={`px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${activeTab === 'quizzes' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:text-indigo-600 hover:bg-white/50'
+                  }`}
               >
                 Quizzes
               </button>
@@ -871,9 +873,8 @@ export default function AdminPage() {
         </div>
 
         {message && (
-          <div className={`mb-4 p-3 rounded-lg ${
-            message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-          }`}>
+          <div className={`mb-4 p-3 rounded-lg ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+            }`}>
             {message.text}
           </div>
         )}
@@ -893,7 +894,7 @@ export default function AdminPage() {
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors">🔍</span>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-3">
                   <select
                     value={levelFilter}
@@ -931,28 +932,28 @@ export default function AdminPage() {
                     className="p-1.5 bg-green-50 hover:bg-green-100 text-green-600 rounded-lg transition-all"
                     title="Backup Word Library (CSV)"
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                   </button>
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     className="p-1.5 bg-pink-50 hover:bg-pink-100 text-pink-600 rounded-lg transition-all"
                     title="Import Words (CSV)"
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12"/></svg>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12" /></svg>
                   </button>
                   <button
                     onClick={downloadTemplate}
                     className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-lg transition-all"
                     title="Download Import Template"
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                   </button>
                   <button
                     onClick={openAddModal}
                     className="p-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-all"
                     title="Add New Word"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                   </button>
                   <input
                     type="file"
@@ -969,11 +970,10 @@ export default function AdminPage() {
                   <button
                     key={word.id}
                     onClick={() => selectWord(word)}
-                    className={`w-full text-left p-4 rounded-2xl transition-all group relative overflow-hidden ${
-                      selectedWord?.id === word.id
-                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                        : 'hover:bg-indigo-50 text-slate-600 hover:text-indigo-900 border border-transparent hover:border-indigo-100/50'
-                    }`}
+                    className={`w-full text-left p-4 rounded-2xl transition-all group relative overflow-hidden ${selectedWord?.id === word.id
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                      : 'hover:bg-indigo-50 text-slate-600 hover:text-indigo-900 border border-transparent hover:border-indigo-100/50'
+                      }`}
                   >
                     <div className="relative z-10 flex justify-between items-center">
                       <div>
@@ -986,11 +986,11 @@ export default function AdminPage() {
                       <div className="flex items-center gap-2">
                         <span
                           role="button"
-                          onClick={(e) => { e.stopPropagation(); if (confirm(`Delete "${word.word}"?`)) { deleteWord() ; selectWord(word) } }}
+                          onClick={(e) => { e.stopPropagation(); if (confirm(`Delete "${word.word}"?`)) { deleteWord(); selectWord(word) } }}
                           className={`opacity-0 group-hover:opacity-100 p-1.5 rounded-lg transition-all hover:bg-red-100 ${selectedWord?.id === word.id ? 'text-red-200 hover:text-red-100' : 'text-red-400 hover:text-red-600'}`}
                           title="Delete word"
                         >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </span>
                         {selectedWord?.id === word.id && (
                           <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></div>
@@ -1016,34 +1016,34 @@ export default function AdminPage() {
               {selectedWord ? (
                 <div className="animate-fadeIn">
                   <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-12 pb-8 border-b border-indigo-100">
-                      <div className="flex-1">
-                        <h2 className="text-6xl font-black text-slate-900 tracking-tighter mb-4">{selectedWord.word}</h2>
-                        <div className="flex flex-wrap gap-2">
-                          <span className="px-3 py-1 bg-indigo-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest leading-none flex items-center">
-                            {formData.level}
+                    <div className="flex-1">
+                      <h2 className="text-6xl font-black text-slate-900 tracking-tighter mb-4">{selectedWord.word}</h2>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="px-3 py-1 bg-indigo-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest leading-none flex items-center">
+                          {formData.level}
+                        </span>
+                        {formData.tags.map((tag, i) => (
+                          <span key={i} className="px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-[10px] font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-1.5 transition-all hover:bg-white">
+                            {tag}
+                            <button
+                              onClick={() => removeTag(tag)}
+                              className="text-red-400 hover:text-red-600 transition-colors p-0.5 rounded-full hover:bg-red-50"
+                              title="Remove tag"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
                           </span>
-                          {formData.tags.map((tag, i) => (
-                            <span key={i} className="px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-[10px] font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-1.5 transition-all hover:bg-white">
-                              {tag}
-                              <button 
-                                onClick={() => removeTag(tag)}
-                                className="text-red-400 hover:text-red-600 transition-colors p-0.5 rounded-full hover:bg-red-50"
-                                title="Remove tag"
-                              >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                              </button>
-                            </span>
-                          ))}
-                          <div className="relative">
-                            <input
-                              type="text"
-                              placeholder="+ Add tag"
-                              onKeyDown={addTag}
-                              className="px-3 py-1 bg-white border border-dashed border-indigo-200 rounded-full text-[10px] font-bold uppercase tracking-wider text-indigo-400 focus:outline-none focus:border-indigo-500 focus:text-indigo-600 w-24 transition-all"
-                            />
-                          </div>
+                        ))}
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="+ Add tag"
+                            onKeyDown={addTag}
+                            className="px-3 py-1 bg-white border border-dashed border-indigo-200 rounded-full text-[10px] font-bold uppercase tracking-wider text-indigo-400 focus:outline-none focus:border-indigo-500 focus:text-indigo-600 w-24 transition-all"
+                          />
                         </div>
                       </div>
+                    </div>
                     <div className="flex gap-3">
                       <button
                         onClick={autoFillWord}
@@ -1064,7 +1064,7 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 ml-1">Part of Speech</label>
                       <input
@@ -1076,6 +1076,19 @@ export default function AdminPage() {
                       />
                       <datalist id="pos-options">
                         {dynamicPOS.map(p => <option key={p} value={p} />)}
+                      </datalist>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 ml-1">Category</label>
+                      <input
+                        list="topic-options"
+                        value={formData.category}
+                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        className="w-full p-4 bg-white/60 border-2 border-indigo-100/50 rounded-2xl focus:border-indigo-500 focus:outline-none text-slate-800 placeholder-slate-400 transition-all font-medium"
+                        placeholder="General, Food, etc."
+                      />
+                      <datalist id="topic-options">
+                        {dynamicTopics.map(t => <option key={t} value={t} />)}
                       </datalist>
                     </div>
                     <div>
@@ -1186,7 +1199,7 @@ export default function AdminPage() {
                   className="p-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-all"
                   title="Add New User"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
@@ -1194,11 +1207,10 @@ export default function AdminPage() {
                   <button
                     key={u.id}
                     onClick={() => setSelectedUser(u)}
-                    className={`w-full text-left p-5 rounded-[1.5rem] transition-all group relative overflow-hidden ${
-                      selectedUser?.id === u.id
-                        ? 'bg-indigo-600 border-2 border-indigo-600 shadow-lg text-white'
-                        : 'bg-white/50 border-2 border-transparent hover:border-indigo-100/50 text-slate-600 hover:text-indigo-900'
-                    }`}
+                    className={`w-full text-left p-5 rounded-[1.5rem] transition-all group relative overflow-hidden ${selectedUser?.id === u.id
+                      ? 'bg-indigo-600 border-2 border-indigo-600 shadow-lg text-white'
+                      : 'bg-white/50 border-2 border-transparent hover:border-indigo-100/50 text-slate-600 hover:text-indigo-900'
+                      }`}
                   >
                     <div className="relative z-10 flex justify-between items-center w-full">
                       <div>
@@ -1218,11 +1230,11 @@ export default function AdminPage() {
                       <div className="flex items-center gap-2">
                         <span
                           role="button"
-                          onClick={(e) => { e.stopPropagation(); if (confirm(`Delete user "${u.email}"?`)) { deleteUser(u.id); if(selectedUser?.id === u.id) setSelectedUser(null); } }}
+                          onClick={(e) => { e.stopPropagation(); if (confirm(`Delete user "${u.email}"?`)) { deleteUser(u.id); if (selectedUser?.id === u.id) setSelectedUser(null); } }}
                           className={`opacity-0 group-hover:opacity-100 p-1.5 rounded-lg transition-all hover:bg-red-100 ${selectedUser?.id === u.id ? 'text-red-200 hover:text-red-100' : 'text-red-400 hover:text-red-600'}`}
                           title="Delete user"
                         >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </span>
                         {selectedUser?.id === u.id && (
                           <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></div>
@@ -1327,7 +1339,7 @@ export default function AdminPage() {
                   className="p-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-all"
                   title="Create New Quiz"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
@@ -1335,11 +1347,10 @@ export default function AdminPage() {
                   <button
                     key={quiz.id}
                     onClick={() => setSelectedQuiz(quiz)}
-                    className={`w-full text-left p-5 rounded-[1.5rem] transition-all group relative overflow-hidden ${
-                      selectedQuiz?.id === quiz.id
-                        ? 'bg-indigo-600 border-2 border-indigo-600 shadow-lg text-white'
-                        : 'bg-white/50 border-2 border-transparent hover:border-indigo-100/50 text-slate-600 hover:text-indigo-900'
-                    }`}
+                    className={`w-full text-left p-5 rounded-[1.5rem] transition-all group relative overflow-hidden ${selectedQuiz?.id === quiz.id
+                      ? 'bg-indigo-600 border-2 border-indigo-600 shadow-lg text-white'
+                      : 'bg-white/50 border-2 border-transparent hover:border-indigo-100/50 text-slate-600 hover:text-indigo-900'
+                      }`}
                   >
                     <div className="relative z-10 flex justify-between items-center w-full">
                       <div>
@@ -1359,11 +1370,11 @@ export default function AdminPage() {
                       <div className="flex items-center gap-2">
                         <span
                           role="button"
-                          onClick={(e) => { e.stopPropagation(); if (confirm(`Delete quiz "${quiz.title}"?`)) { deleteQuiz(quiz.id); if(selectedQuiz?.id === quiz.id) setSelectedQuiz(null); } }}
+                          onClick={(e) => { e.stopPropagation(); if (confirm(`Delete quiz "${quiz.title}"?`)) { deleteQuiz(quiz.id); if (selectedQuiz?.id === quiz.id) setSelectedQuiz(null); } }}
                           className={`opacity-0 group-hover:opacity-100 p-1.5 rounded-lg transition-all hover:bg-red-100 ${selectedQuiz?.id === quiz.id ? 'text-red-200 hover:text-red-100' : 'text-red-400 hover:text-red-600'}`}
                           title="Delete quiz"
                         >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </span>
                         {selectedQuiz?.id === quiz.id && (
                           <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></div>
@@ -1436,7 +1447,7 @@ export default function AdminPage() {
         {showAddModal && activeTab === 'words' && (
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
             <div className="bg-white/95 rounded-[3rem] p-10 border border-indigo-100 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar relative">
-              <button 
+              <button
                 onClick={() => { resetAddForm(); setShowAddModal(false); }}
                 className="absolute top-8 right-8 text-slate-400 hover:text-indigo-600 transition-colors"
               >
@@ -1445,181 +1456,193 @@ export default function AdminPage() {
 
               <div className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-4">Word Registry</div>
               <h2 className="text-4xl font-black text-slate-900 tracking-tighter mb-10">Add New Word</h2>
-              
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-1">Word *</label>
-                    <input
-                      type="text"
-                      value={addForm.word}
-                      onChange={(e) => setAddForm({ ...addForm, word: e.target.value })}
-                      className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-900 placeholder-slate-300 transition-all font-bold tracking-wide"
-                      placeholder="Enter word..."
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Part of Speech</label>
-                    <input
-                      list="pos-add-options"
-                      value={addForm.partOfSpeech}
-                      onChange={(e) => setAddForm({ ...addForm, partOfSpeech: e.target.value })}
-                      className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-700 text-xs font-bold uppercase tracking-widest transition-all"
-                      placeholder="noun, verb..."
-                    />
-                    <datalist id="pos-add-options">
-                      {dynamicPOS.map(opt => <option key={opt} value={opt} />)}
-                    </datalist>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Level</label>
-                    <select
-                      value={addForm.level}
-                      onChange={(e) => setAddForm({ ...addForm, level: e.target.value })}
-                      className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-700 text-xs font-bold uppercase tracking-widest transition-all cursor-pointer"
-                    >
-                      {LEVELS.map((opt) => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
 
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (!addForm.word.trim()) return
-                      setAutoFilling(true)
-                      try {
-                        const result = await fetchDefinition(addForm.word, addForm.partOfSpeech, addForm.level)
-                        if (!result) throw new Error('Autofill failed')
-                        setAddForm(prev => ({
-                          ...prev,
-                          phonetic: result.phonetic || prev.phonetic,
-                          meaning: result.meaning || prev.meaning,
-                          examples: Array.isArray(result.examples) ? result.examples.join('\n') : prev.examples,
-                          scenario: result.scenario || prev.scenario,
-                          emotionalConnection: result.emotionalConnection || prev.emotionalConnection,
-                        }))
-                        setMessage({ type: 'success', text: '✨ Definition synthesized!' })
-                        setTimeout(() => setMessage(null), 3000)
-                      } catch (error) {
-                        setMessage({ type: 'error', text: 'Synthesis failed' })
-                      } finally {
-                        setAutoFilling(false)
-                      }
-                    }}
-                    disabled={autoFilling || !addForm.word.trim()}
-                    className="px-8 py-4 bg-indigo-600 text-white rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-50"
-                  >
-                    {autoFilling ? 'Synthesizing...' : '✨ AI Autofill'}
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-1">Phonetic</label>
-                    <input
-                      type="text"
-                      value={addForm.phonetic}
-                      onChange={(e) => setAddForm({ ...addForm, phonetic: e.target.value })}
-                      className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-700 placeholder-slate-300 transition-all font-medium"
-                      placeholder="/fəˈnet.ɪk/"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-1">Meaning</label>
-                    <input
-                      type="text"
-                      value={addForm.meaning}
-                      onChange={(e) => setAddForm({ ...addForm, meaning: e.target.value })}
-                      className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-700 placeholder-slate-300 transition-all font-medium"
-                      placeholder="Primary definition..."
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 ml-1">Tags (Press Enter to add)</label>
-                  <div className="flex flex-wrap gap-2 p-4 bg-slate-50 border-2 border-indigo-50 rounded-[1.5rem]">
-                    {addForm.tags.map((tag, i) => (
-                      <span key={i} className="px-3 py-1 bg-white border border-indigo-100 rounded-full text-[10px] font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-2">
-                        {tag}
-                        <button 
-                          onClick={() => setAddForm(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tag) }))}
-                          className="text-red-400 hover:text-red-600 transition-colors"
-                        >
-                          ✕
-                        </button>
-                      </span>
-                    ))}
-                    <input
-                      type="text"
-                      placeholder="+ Add tag..."
-                      className="bg-transparent border-none focus:outline-none text-[10px] font-bold uppercase tracking-wider text-slate-600 w-24"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          const val = e.currentTarget.value.trim()
-                          if (val && !addForm.tags.includes(val)) {
-                            setAddForm(prev => ({ ...prev, tags: [...prev.tags, val] }))
-                            e.currentTarget.value = ''
-                          }
-                          e.preventDefault()
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-1">Scenario</label>
-                  <textarea
-                    value={addForm.scenario}
-                    onChange={(e) => setAddForm({ ...addForm, scenario: e.target.value })}
-                    rows={2}
-                    className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-800 transition-all font-medium resize-none"
-                    placeholder="Contextual usage scenario..."
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-1">Word *</label>
+                  <input
+                    type="text"
+                    value={addForm.word}
+                    onChange={(e) => setAddForm({ ...addForm, word: e.target.value })}
+                    className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-900 placeholder-slate-300 transition-all font-bold tracking-wide"
+                    placeholder="Enter word..."
                   />
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-1">Examples</label>
-                    <textarea
-                      value={addForm.examples}
-                      onChange={(e) => setAddForm({ ...addForm, examples: e.target.value })}
-                      rows={3}
-                      className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-700 text-xs leading-relaxed transition-all resize-none"
-                      placeholder="One example per line..."
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-1">Images</label>
-                    <textarea
-                      value={addForm.images}
-                      onChange={(e) => setAddForm({ ...addForm, images: e.target.value })}
-                      rows={3}
-                      className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-indigo-600 font-mono text-[10px] transition-all resize-none"
-                      placeholder="image URLs, one per line..."
-                    />
-                  </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Category</label>
+                  <input
+                    list="topic-add-options"
+                    value={addForm.category}
+                    onChange={(e) => setAddForm({ ...addForm, category: e.target.value })}
+                    className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-700 text-xs font-bold uppercase tracking-widest transition-all"
+                    placeholder="General, Food..."
+                  />
+                  <datalist id="topic-add-options">
+                    {dynamicTopics.map(opt => <option key={opt} value={opt} />)}
+                  </datalist>
                 </div>
-
-                <div className="flex gap-4 pt-4">
-                  <button
-                    onClick={() => { resetAddForm(); setShowAddModal(false); }}
-                    className="flex-1 py-5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-3xl font-black text-[10px] uppercase tracking-widest transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={addWord}
-                    disabled={saving || !addForm.word.trim()}
-                    className="flex-[2] py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-3xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-600/30 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
-                  >
-                    {saving ? 'Adding Word...' : 'Create Word'}
-                  </button>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Part of Speech</label>
+                  <input
+                    list="pos-add-options"
+                    value={addForm.partOfSpeech}
+                    onChange={(e) => setAddForm({ ...addForm, partOfSpeech: e.target.value })}
+                    className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-700 text-xs font-bold uppercase tracking-widest transition-all"
+                    placeholder="noun, verb..."
+                  />
+                  <datalist id="pos-add-options">
+                    {dynamicPOS.map(opt => <option key={opt} value={opt} />)}
+                  </datalist>
                 </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Level</label>
+                  <select
+                    value={addForm.level}
+                    onChange={(e) => setAddForm({ ...addForm, level: e.target.value })}
+                    className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-700 text-xs font-bold uppercase tracking-widest transition-all cursor-pointer"
+                  >
+                    {LEVELS.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!addForm.word.trim()) return
+                    setAutoFilling(true)
+                    try {
+                      const result = await fetchDefinition(addForm.word, addForm.partOfSpeech, addForm.level)
+                      if (!result) throw new Error('Autofill failed')
+                      setAddForm(prev => ({
+                        ...prev,
+                        phonetic: result.phonetic || prev.phonetic,
+                        meaning: result.meaning || prev.meaning,
+                        examples: Array.isArray(result.examples) ? result.examples.join('\n') : prev.examples,
+                        scenario: result.scenario || prev.scenario,
+                        emotionalConnection: result.emotionalConnection || prev.emotionalConnection,
+                      }))
+                      setMessage({ type: 'success', text: '✨ Definition synthesized!' })
+                      setTimeout(() => setMessage(null), 3000)
+                    } catch (error) {
+                      setMessage({ type: 'error', text: 'Synthesis failed' })
+                    } finally {
+                      setAutoFilling(false)
+                    }
+                  }}
+                  disabled={autoFilling || !addForm.word.trim()}
+                  className="px-8 py-4 bg-indigo-600 text-white rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-50"
+                >
+                  {autoFilling ? 'Synthesizing...' : '✨ AI Autofill'}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-1">Phonetic</label>
+                  <input
+                    type="text"
+                    value={addForm.phonetic}
+                    onChange={(e) => setAddForm({ ...addForm, phonetic: e.target.value })}
+                    className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-700 placeholder-slate-300 transition-all font-medium"
+                    placeholder="/fəˈnet.ɪk/"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-1">Meaning</label>
+                  <input
+                    type="text"
+                    value={addForm.meaning}
+                    onChange={(e) => setAddForm({ ...addForm, meaning: e.target.value })}
+                    className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-700 placeholder-slate-300 transition-all font-medium"
+                    placeholder="Primary definition..."
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 ml-1">Tags (Press Enter to add)</label>
+                <div className="flex flex-wrap gap-2 p-4 bg-slate-50 border-2 border-indigo-50 rounded-[1.5rem]">
+                  {addForm.tags.map((tag, i) => (
+                    <span key={i} className="px-3 py-1 bg-white border border-indigo-100 rounded-full text-[10px] font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-2">
+                      {tag}
+                      <button
+                        onClick={() => setAddForm(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tag) }))}
+                        className="text-red-400 hover:text-red-600 transition-colors"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    type="text"
+                    placeholder="+ Add tag..."
+                    className="bg-transparent border-none focus:outline-none text-[10px] font-bold uppercase tracking-wider text-slate-600 w-24"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const val = e.currentTarget.value.trim()
+                        if (val && !addForm.tags.includes(val)) {
+                          setAddForm(prev => ({ ...prev, tags: [...prev.tags, val] }))
+                          e.currentTarget.value = ''
+                        }
+                        e.preventDefault()
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-1">Scenario</label>
+                <textarea
+                  value={addForm.scenario}
+                  onChange={(e) => setAddForm({ ...addForm, scenario: e.target.value })}
+                  rows={2}
+                  className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-800 transition-all font-medium resize-none"
+                  placeholder="Contextual usage scenario..."
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-1">Examples</label>
+                  <textarea
+                    value={addForm.examples}
+                    onChange={(e) => setAddForm({ ...addForm, examples: e.target.value })}
+                    rows={3}
+                    className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-slate-700 text-xs leading-relaxed transition-all resize-none"
+                    placeholder="One example per line..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-1">Images</label>
+                  <textarea
+                    value={addForm.images}
+                    onChange={(e) => setAddForm({ ...addForm, images: e.target.value })}
+                    rows={3}
+                    className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-2xl focus:border-indigo-400 focus:outline-none text-indigo-600 font-mono text-[10px] transition-all resize-none"
+                    placeholder="image URLs, one per line..."
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  onClick={() => { resetAddForm(); setShowAddModal(false); }}
+                  className="flex-1 py-5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-3xl font-black text-[10px] uppercase tracking-widest transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={addWord}
+                  disabled={saving || !addForm.word.trim()}
+                  className="flex-[2] py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-3xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-600/30 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+                >
+                  {saving ? 'Adding Word...' : 'Create Word'}
+                </button>
               </div>
             </div>
           </div>
@@ -1630,10 +1653,10 @@ export default function AdminPage() {
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
             <div className="bg-white/95 rounded-[3rem] p-12 border border-indigo-100 shadow-2xl max-w-md w-full relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl -translate-y-16 translate-x-16"></div>
-              
+
               <div className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-4">User Management</div>
               <h2 className="text-3xl font-black text-slate-900 tracking-tighter mb-8">Register User</h2>
-              
+
               <div className="space-y-6 relative z-10">
                 {[
                   { label: 'Email Address *', field: 'email', type: 'email', placeholder: 'user@example.com' },
@@ -1691,7 +1714,7 @@ export default function AdminPage() {
             <div className="bg-white/95 rounded-[3rem] p-10 border border-indigo-100 shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar">
               <div className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-4">Quiz Architecture</div>
               <h2 className="text-5xl font-black text-slate-900 tracking-tighter mb-10">Construct Module</h2>
-              
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 <div className="space-y-8">
                   <div>
@@ -1735,7 +1758,7 @@ export default function AdminPage() {
                     <span>Selected Vocabulary</span>
                     <span className="text-indigo-600">{quizWordIds.length} Linked</span>
                   </label>
-                  
+
                   <div className="bg-slate-50 border border-indigo-50 rounded-[2rem] p-6 max-h-[400px] overflow-y-auto custom-scrollbar">
                     <div className="flex flex-wrap gap-2">
                       {words.map((word) => {
@@ -1745,11 +1768,10 @@ export default function AdminPage() {
                             key={word.id}
                             type="button"
                             onClick={() => toggleQuizWord(word.id)}
-                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                              isSelected
-                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                                : 'bg-white text-slate-400 hover:text-indigo-600 border border-indigo-100'
-                            }`}
+                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isSelected
+                              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                              : 'bg-white text-slate-400 hover:text-indigo-600 border border-indigo-100'
+                              }`}
                           >
                             {word.word}
                           </button>
@@ -1799,7 +1821,7 @@ export default function AdminPage() {
                       onChange={(e) => setOverrideExisting(e.target.checked)}
                       className="peer appearance-none w-6 h-6 border-2 border-indigo-200 rounded-lg checked:bg-indigo-600 checked:border-indigo-600 transition-all cursor-pointer"
                     />
-                    <svg className="absolute w-4 h-4 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7"/></svg>
+                    <svg className="absolute w-4 h-4 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" /></svg>
                   </div>
                   <div>
                     <span className="text-sm font-black text-slate-800 uppercase tracking-wide group-hover:text-indigo-600 transition-colors">Override Existing Records</span>
