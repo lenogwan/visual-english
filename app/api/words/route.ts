@@ -17,6 +17,16 @@ async function getAuth(request: NextRequest) {
   }
 }
 
+function safeJsonParse(data: any, fallback: any = []) {
+  if (typeof data !== 'string') return data || fallback
+  try {
+    return JSON.parse(data)
+  } catch (e) {
+    console.error('Failed to parse JSON:', data, e)
+    return fallback
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -68,10 +78,10 @@ export async function GET(request: NextRequest) {
       words: words.map((w: any) => ({
         ...w,
         partOfSpeech: Array.isArray(w.partOfSpeech) ? (w.partOfSpeech[0] || 'word') : (w.partOfSpeech || 'word'),
-        images: JSON.parse(w.images || '[]'),
-        scenarioImages: JSON.parse(w.scenarioImages || '[]'),
-        tags: JSON.parse(w.tags || '[]'),
-        examples: JSON.parse(w.examples || '[]'),
+        images: safeJsonParse(w.images),
+        scenarioImages: safeJsonParse(w.scenarioImages),
+        tags: safeJsonParse(w.tags),
+        examples: safeJsonParse(w.examples),
       })),
       total,
       limit,
@@ -93,8 +103,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const {
       word,
-      partOfSpeech, // Expecting this to be an array now
-      // senseIndex is managed internally now
+      partOfSpeech,
       phonetic,
       meaning,
       exampleSentence,
@@ -113,30 +122,32 @@ export async function POST(request: NextRequest) {
 
     // Ensure partOfSpeech is an array, default to ["unknown"] if not provided or invalid
     let partsToProcess: string[];
-    if (Array.isArray(body.partOfSpeech)) {
-      partsToProcess = body.partOfSpeech.filter((p: any) => typeof p === 'string' && p.trim() !== ''); // Filter out empty strings
-      if (partsToProcess.length === 0) partsToProcess = ['unknown']; // Handle case where array was empty or contained only empty strings
-    } else if (typeof body.partOfSpeech === 'string' && body.partOfSpeech.trim() !== '') {
-      // If it's a single non-empty string, treat it as the only part of speech
-      partsToProcess = [body.partOfSpeech.trim()];
-    } else if (tags && tags.length > 0 && typeof tags[0] === 'string' && tags[0].trim() !== '') {
-      // Fallback to the first tag if partOfSpeech is missing or default/empty
-      partsToProcess = [tags[0].trim()];
+    if (Array.isArray(partOfSpeech)) {
+      partsToProcess = partOfSpeech.filter((p: any) => typeof p === 'string' && p.trim() !== '');
+      if (partsToProcess.length === 0) partsToProcess = ['unknown'];
+    } else if (typeof partOfSpeech === 'string' && partOfSpeech.trim() !== '') {
+      partsToProcess = [partOfSpeech.trim()];
     } else {
-      // Default if nothing else is available
       partsToProcess = ['unknown'];
     }
 
     const createdWords = [];
-    for (let i = 0; i < partsToProcess.length; i++) {
-      const currentPartOfSpeech = partsToProcess[i];
-      const currentSenseIndex = i; // Increment senseIndex for each part of speech
+    for (const currentPartOfSpeech of partsToProcess) {
+      // Find the next available senseIndex for this word
+      const maxSense = await prisma.word.findFirst({
+        where: { word },
+        orderBy: { senseIndex: 'desc' },
+        select: { senseIndex: true }
+      });
+      
+      const nextSenseIndex = (maxSense?.senseIndex ?? -1) + 1;
 
       const newWordEntry = await prisma.word.create({
         data: {
           word,
-          partOfSpeech: currentPartOfSpeech, // Assign the string directly for Json type
-          senseIndex: currentSenseIndex,
+          // Store as an array to match Json type and schema default
+          partOfSpeech: [currentPartOfSpeech],
+          senseIndex: nextSenseIndex,
           phonetic: phonetic || null,
           meaning: meaning || null,
           exampleSentence: exampleSentence || null,
@@ -152,13 +163,11 @@ export async function POST(request: NextRequest) {
       createdWords.push(newWordEntry);
     }
 
-    // Return the first created word if only one, or the array if multiple
     return NextResponse.json({ success: true, word: createdWords.length === 1 ? createdWords[0] : createdWords });
   } catch (error) {
     console.error('Create word error:', error)
-    // Catch unique constraint errors specifically
-    if (error instanceof Error && error.message.includes('unique constraint failed')) {
-      return NextResponse.json({ error: 'Word with this part of speech and sense index already exists.' }, { status: 409 });
+    if (error instanceof Error && (error.message.includes('unique constraint') || error.message.includes('P2002'))) {
+      return NextResponse.json({ error: 'Word with this sense index already exists.' }, { status: 409 });
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

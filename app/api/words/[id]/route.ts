@@ -4,6 +4,16 @@ import jwt from 'jsonwebtoken'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'visual-english-secret-key-change-in-production'
 
+function safeJsonParse(data: any, fallback: any = []) {
+  if (typeof data !== 'string') return data || fallback
+  try {
+    return JSON.parse(data)
+  } catch (e) {
+    console.error('Failed to parse JSON:', data, e)
+    return fallback
+  }
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -14,7 +24,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string }
+    jwt.verify(token, JWT_SECRET) as { userId: string }
     const { id } = await params
 
     const body = await request.json()
@@ -39,10 +49,10 @@ export async function PUT(
 
     return NextResponse.json({
       ...word,
-      images: JSON.parse(word.images),
-      scenarioImages: JSON.parse(word.scenarioImages),
-      tags: JSON.parse(word.tags),
-      examples: JSON.parse(word.examples || '[]'),
+      images: safeJsonParse(word.images),
+      scenarioImages: safeJsonParse(word.scenarioImages),
+      tags: safeJsonParse(word.tags),
+      examples: safeJsonParse(word.examples),
     })
   } catch (error) {
     console.error('Word update error:', error)
@@ -64,10 +74,10 @@ export async function GET(
 
     return NextResponse.json({
       ...word,
-      images: JSON.parse(word.images),
-      scenarioImages: JSON.parse(word.scenarioImages),
-      tags: JSON.parse(word.tags),
-      examples: JSON.parse(word.examples || '[]'),
+      images: safeJsonParse(word.images),
+      scenarioImages: safeJsonParse(word.scenarioImages),
+      tags: safeJsonParse(word.tags),
+      examples: safeJsonParse(word.examples),
     })
   } catch (error) {
     console.error('Word get error:', error)

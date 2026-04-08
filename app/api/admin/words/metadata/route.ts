@@ -17,6 +17,16 @@ async function getAuth(request: NextRequest) {
   }
 }
 
+function safeJsonParse(data: any, fallback: any = []) {
+  if (typeof data !== 'string') return data || fallback
+  try {
+    return JSON.parse(data)
+  } catch (e) {
+    console.error('Failed to parse JSON:', data, e)
+    return fallback
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const auth = await getAuth(request)
@@ -29,38 +39,35 @@ export async function GET(request: NextRequest) {
       select: { partOfSpeech: true },
       distinct: ['partOfSpeech'],
     })
-    const partsOfSpeech = posResults
-      .map(r => r.partOfSpeech)
-      .filter(Boolean)
-      .sort()
+    
+    const partsOfSpeechSet = new Set<string>()
+    posResults.forEach(r => {
+      const pos = r.partOfSpeech
+      if (Array.isArray(pos)) {
+        pos.forEach(p => partsOfSpeechSet.add(p))
+      } else if (typeof pos === 'string') {
+        partsOfSpeechSet.add(pos)
+      }
+    })
+    const partsOfSpeech = Array.from(partsOfSpeechSet).filter(Boolean).sort()
 
     // Fetch unique categories from tags
-    // Since tags is a JSON string in SQLite, we fetch all and parse in memory for simplicity
     const allTags = await prisma.word.findMany({
       select: { tags: true },
     })
 
     const categoriesSet = new Set<string>()
     allTags.forEach(w => {
-      try {
-        const tags = JSON.parse(w.tags || '[]')
-        if (Array.isArray(tags)) {
-          // Typically the second tag is the category (e.g. ['noun', 'food', 'A1'])
-          // But to be safe and dynamic, we collect all except the first (POS) and last (Level)?
-          // Actually, let's just collect all tags and the UI can filter or the user can choose.
-          // The request says "categories", so we take everything that isn't a POS or Level if possible.
-          // For now, let's just grab all unique tags to give the user full flexibility.
-          tags.forEach(t => {
-            if (t && t.length > 0) categoriesSet.add(t)
-          })
-        }
-      } catch (e) {
-        console.error('Failed to parse tags:', w.tags)
+      const tags = safeJsonParse(w.tags)
+      if (Array.isArray(tags)) {
+        tags.forEach(t => {
+          if (t && t.length > 0) categoriesSet.add(t)
+        })
       }
     })
 
     // Filter out known POS and Levels from categories to keep it clean
-    const levels = ['A1', 'A2', 'B1']
+    const levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
     const categories = Array.from(categoriesSet)
       .filter(c => !partsOfSpeech.includes(c) && !levels.includes(c))
       .sort()
