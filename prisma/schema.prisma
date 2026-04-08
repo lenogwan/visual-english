@@ -44,6 +44,7 @@ model Word {
   favorites           FavoriteWord[]
   progress            UserProgress[]
 
+  @@unique([word, senseIndex])
   @@index([level])
 }
 

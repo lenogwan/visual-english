@@ -33,22 +33,23 @@ export async function POST(request: NextRequest) {
     let updatedCount = 0
     let skippedCount = 0
 
-    // Sequential processing for safety (SQLite transactions)
+    // Sequential processing for safety
     for (const item of words) {
       const wordStr = String(item.word || '').trim()
-      const senseIndex = parseInt(item.senseIndex || '0')
+      let senseIndex = parseInt(item.senseIndex || '0')
       
       if (!wordStr) {
         skippedCount++
         continue
       }
 
+      const partOfSpeech = Array.isArray(item.partOfSpeech)
+        ? item.partOfSpeech.map((pos: any) => String(pos).toLowerCase().trim()).filter(Boolean)
+        : (String(item.partOfSpeech || 'unknown').toLowerCase().trim() === 'unknown' ? ['unknown'] : [String(item.partOfSpeech).toLowerCase().trim()])
+
       const data = {
         word: wordStr,
-        senseIndex,
-        partOfSpeech: Array.isArray(item.partOfSpeech)
-  ? item.partOfSpeech.map((pos: any) => String(pos).toLowerCase().trim()).filter(Boolean)
-  : (String(item.partOfSpeech || 'unknown').toLowerCase().trim() === 'unknown' ? ['unknown'] : [String(item.partOfSpeech).toLowerCase().trim()]),
+        partOfSpeech,
         phonetic: item.phonetic || null,
         meaning: item.meaning || null,
         scenario: item.scenario || null,
@@ -61,6 +62,7 @@ export async function POST(request: NextRequest) {
       }
 
       if (override) {
+        // In override mode, we stick to the provided senseIndex (or default 0)
         await prisma.word.upsert({
           where: {
             word_senseIndex: {
@@ -68,12 +70,14 @@ export async function POST(request: NextRequest) {
               senseIndex,
             }
           },
-          update: data,
-          create: data,
+          update: { ...data, senseIndex },
+          create: { ...data, senseIndex },
         })
-        updatedCount++ // Treating upsert as update/create
+        updatedCount++
       } else {
-        const existing = await prisma.word.findUnique({
+        // Intelligent skip/create logic: 
+        // Find if this specific word with this specific sense already exists
+        let existing = await prisma.word.findUnique({
           where: {
             word_senseIndex: {
               word: wordStr,
@@ -82,11 +86,26 @@ export async function POST(request: NextRequest) {
           }
         })
 
+        // If it exists, but we want to allow different types (senses), 
+        // we find the next available senseIndex
         if (existing) {
-          skippedCount++
+          // Check if it's EXACTLY the same (optional, here we assume if senseIndex matches, it's a conflict)
+          // Find the max senseIndex for this word and increment
+          const maxSense = await prisma.word.findFirst({
+            where: { word: wordStr },
+            orderBy: { senseIndex: 'desc' },
+            select: { senseIndex: true }
+          })
+          
+          senseIndex = (maxSense?.senseIndex ?? 0) + 1
+          
+          await prisma.word.create({
+            data: { ...data, senseIndex }
+          })
+          createdCount++
         } else {
           await prisma.word.create({
-            data
+            data: { ...data, senseIndex }
           })
           createdCount++
         }
