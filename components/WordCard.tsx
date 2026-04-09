@@ -12,11 +12,12 @@ interface WordCardProps {
   scenario?: string | null
   examples?: string[]
   images?: string[]
+  tags?: string[]
   partOfSpeech?: string | string[]
   emotionalConnection?: string | null
 }
 
-export default function WordCard({ id, word, phonetic, meaning, scenario, examples = [], images = [], partOfSpeech, emotionalConnection }: WordCardProps) {
+export default function WordCard({ id, word, phonetic, meaning, scenario, examples = [], images = [], tags = [], partOfSpeech, emotionalConnection }: WordCardProps) {
   const { token } = useAuth()
   const [isFav, setIsFav] = useState(false)
   const [exampleIndex, setExampleIndex] = useState(0)
