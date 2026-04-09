@@ -18,33 +18,40 @@ export async function GET(request: NextRequest) {
     const userId = await getUserId(request)
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    // Fetch user progress for learned words
+    const { searchParams } = new URL(request.url)
+    const mode = searchParams.get('mode') || 'meaning' // meaning, spelling, scenario
+
     const progress = await prisma.userProgress.findMany({
       where: { userId, learned: true },
       include: { word: true },
-      take: 20
+      take: 50
     })
 
     if (progress.length === 0) return NextResponse.json({ error: 'No learned words' }, { status: 404 })
 
-    // Pick a random word from progress
     const randomIndex = Math.floor(Math.random() * progress.length)
     const p = progress[randomIndex]
     const word = p.word
 
-    // Generate distractors from other words
-    const distractors = await prisma.word.findMany({
-      where: { id: { not: word.id } },
-      take: 3,
-      select: { meaning: true }
-    })
+    let response = { wordId: word.id, mode } as any
 
-    return NextResponse.json({
-      wordId: word.id,
-      question: word.word,
-      correctAnswer: word.meaning,
-      options: [...distractors.map(d => d.meaning), word.meaning].sort(() => Math.random() - 0.5)
-    })
+    if (mode === 'spelling') {
+      response.question = `Listen to the pronunciation.`
+      response.correctAnswer = word.word
+      response.options = [] // Spelling logic handled in frontend
+    } else if (mode === 'scenario') {
+      response.question = word.scenario
+      response.correctAnswer = word.word
+      const distractors = await prisma.word.findMany({ where: { id: { not: word.id } }, take: 3, select: { word: true } })
+      response.options = [...distractors.map(d => d.word), word.word].sort(() => Math.random() - 0.5)
+    } else {
+      response.question = word.word
+      response.correctAnswer = word.meaning
+      const distractors = await prisma.word.findMany({ where: { id: { not: word.id } }, take: 3, select: { meaning: true } })
+      response.options = [...distractors.map(d => d.meaning), word.meaning].sort(() => Math.random() - 0.5)
+    }
+
+    return NextResponse.json(response)
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
