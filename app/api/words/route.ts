@@ -75,14 +75,26 @@ export async function GET(request: NextRequest) {
     ])
 
     return NextResponse.json({
-      words: words.map((w: any) => ({
-        ...w,
-        partOfSpeech: Array.isArray(w.partOfSpeech) ? (w.partOfSpeech[0] || 'word') : (w.partOfSpeech || 'word'),
-        images: safeJsonParse(w.images),
-        scenarioImages: safeJsonParse(w.scenarioImages),
-        tags: safeJsonParse(w.tags),
-        examples: safeJsonParse(w.examples),
-      })),
+      words: words.map((w: any) => {
+        let displayPos = 'word';
+        const pos = w.partOfSpeech;
+        if (Array.isArray(pos)) {
+          displayPos = pos[0] || 'word';
+        } else if (typeof pos === 'string') {
+          // If it's a string, it might be a JSON string like '["noun"]' or just 'noun'
+          const parsed = safeJsonParse(pos, [pos]);
+          displayPos = Array.isArray(parsed) ? (parsed[0] || 'word') : (parsed || 'word');
+        }
+        
+        return {
+          ...w,
+          partOfSpeech: displayPos,
+          images: safeJsonParse(w.images),
+          scenarioImages: safeJsonParse(w.scenarioImages),
+          tags: safeJsonParse(w.tags),
+          examples: safeJsonParse(w.examples),
+        };
+      }),
       total,
       limit,
       offset,
