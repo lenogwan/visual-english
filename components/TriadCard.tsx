@@ -64,8 +64,6 @@ export default function TriadCard({ word: initialWord, onNext, onPrev }: TriadCa
     }
   }
 
-  const examples = currentSense.examples && currentSense.examples.length > 0 ? currentSense.examples : ['No examples available.']
-
   const playPronunciation = (e: React.MouseEvent) => {
     e.stopPropagation()
     if ('speechSynthesis' in window) {
@@ -103,24 +101,15 @@ export default function TriadCard({ word: initialWord, onNext, onPrev }: TriadCa
             flipped ? 'rotate-y-180' : ''
           }`}
         >
-          
           {/* Front */}
           <div className="backface-hidden absolute inset-0">
             <div className="bg-white rounded-[3.5rem] shadow-2xl overflow-hidden h-full border border-indigo-50 flex flex-col">
               <div className="p-6 pb-2 flex gap-3 items-center justify-center">
-                {category && (
-                  <span className="px-4 py-1 bg-slate-100 text-slate-500 rounded-full text-[10px] font-black tracking-widest border border-slate-200/50">
-                    {category.toUpperCase()}
-                  </span>
-                )}
-                <span className="px-4 py-1 bg-indigo-50 text-indigo-400 rounded-full text-[10px] font-black tracking-widest border border-indigo-100/50">
-                  {rawPos?.toUpperCase() || 'WORD'}
-                </span>
+                {category && <span className="px-4 py-1 bg-slate-100 text-slate-500 rounded-full text-[10px] font-black tracking-widest border border-slate-200/50">{category.toUpperCase()}</span>}
+                <span className="px-4 py-1 bg-indigo-50 text-indigo-400 rounded-full text-[10px] font-black tracking-widest border border-indigo-100/50">{rawPos?.toUpperCase() || 'WORD'}</span>
               </div>
               <div className="px-10 pt-6 pb-4 text-center">
-                <h1 className="text-5xl font-serif italic text-slate-800 tracking-tight mb-2">
-                  {currentSense.word}
-                </h1>
+                <h1 className="text-5xl font-serif italic text-slate-800 tracking-tight mb-2">{currentSense.word}</h1>
                 <p className="text-lg text-slate-400 font-medium tracking-[0.2em]">{currentSense.phonetic}</p>
               </div>
               <div className="px-12 py-2 flex items-center justify-center">
@@ -138,7 +127,18 @@ export default function TriadCard({ word: initialWord, onNext, onPrev }: TriadCa
           {/* Back */}
           <div className="backface-hidden rotate-y-180 absolute inset-0">
              <div className="bg-white rounded-[3.5rem] shadow-2xl overflow-hidden h-full border border-indigo-50 flex flex-col p-10">
-                <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-6">CONTEXTUAL SCENARIO</h2>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">CONTEXTUAL SCENARIO</h2>
+                  <button onClick={playFeelIt} className="p-2.5 bg-indigo-50 text-indigo-400 rounded-full hover:text-indigo-600 transition-all"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217z" /></svg></button>
+                </div>
+                
+                {/* Images restored */}
+                {currentSense.scenarioImages && safeJsonParse(currentSense.scenarioImages, []).length > 0 ? (
+                  <div className="mb-6 rounded-[2rem] overflow-hidden h-[240px] bg-slate-100">
+                    <img src={safeJsonParse(currentSense.scenarioImages, [])[0]} alt="Scenario" className="w-full h-full object-cover" />
+                  </div>
+                ) : null}
+
                 <div className="flex-1 overflow-y-auto no-scrollbar">
                    <p className="text-xl text-slate-600 italic leading-[1.8] font-medium text-center font-serif">"{currentSense.emotionalConnection || currentSense.meaning}"</p>
                 </div>
