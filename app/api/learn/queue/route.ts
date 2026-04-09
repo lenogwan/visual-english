@@ -23,8 +23,13 @@ export async function GET(request: NextRequest) {
     const dailyGoal = parseInt(settings.dailyGoal || '20')
     const targetLevel = settings.englishLevel || ''
 
-    const allWords = await prisma.word.findMany()
+    // 1. Fetch only relevant words based on user level (if targetLevel is set)
+    const where: any = {}
+    if (targetLevel && targetLevel !== 'All') {
+        where.level = targetLevel
+    }
 
+    const allWords = await prisma.word.findMany({ where })
     const progress = await prisma.userProgress.findMany({ where: { userId } })
     const progressMap = new Map(progress.map(p => [p.wordId, p]))
 
@@ -40,15 +45,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const sortedToLearn = toLearn.sort((a, b) => {
-        if (targetLevel) {
-          if (a.level === targetLevel && b.level !== targetLevel) return -1
-          if (a.level !== targetLevel && b.level === targetLevel) return 1
-        }
-        return 0
-    })
-
-    const queue = [...toReview, ...sortedToLearn.slice(0, dailyGoal - toReview.length)]
+    // 2. Combine: Review first, then Learn until Goal
+    // Slice toLearn so that toReview + toLearn.slice(0, remaining) = dailyGoal
+    const needed = Math.max(0, dailyGoal - toReview.length)
+    const queue = [...toReview, ...toLearn.slice(0, needed)]
 
     return NextResponse.json({
       queue: queue.map((w: any) => ({
