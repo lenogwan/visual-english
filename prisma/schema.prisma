@@ -9,40 +9,42 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  password      String
-  name          String?
-  role          String         @default("User")
-  settings      String         @default("{}")
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  favoriteWords FavoriteWord[]
-  quizzes       Quiz[]
-  quizAttempts  QuizAttempt[]
-  progress      UserProgress[]
+  id              String            @id @default(cuid())
+  email           String            @unique
+  password        String
+  name            String?
+  role            String            @default("User")
+  settings        String            @default("{}")
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  favoriteWords   FavoriteWord[]
+  quizzes         Quiz[]
+  quizAttempts    QuizAttempt[]
+  progress        UserProgress[]
+  practiceHistory PracticeHistory[]
 }
 
 model Word {
-  id                  String         @id @default(cuid())
+  id                  String            @id @default(cuid())
   word                String
-  partOfSpeech        Json           @default(value: "[\"unknown\"]")
-  senseIndex          Int            @default(0)
+  partOfSpeech        Json              @default(value: "[\"unknown\"]")
+  senseIndex          Int               @default(0)
   phonetic            String?
   audioUrl            String?
   meaning             String?
-  examples            String         @default("[]")
-  images              String         @default("[]")
+  examples            String            @default("[]")
+  images              String            @default("[]")
   scenario            String?
-  scenarioImages      String         @default("[]")
+  scenarioImages      String            @default("[]")
   exampleSentence     String?
   emotionalConnection String?
-  tags                String         @default("[]")
-  level               String         @default("A1")
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
+  tags                String            @default("[]")
+  level               String            @default("A1")
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
   favorites           FavoriteWord[]
   progress            UserProgress[]
+  practiceHistory     PracticeHistory[]
 
   @@unique([word, senseIndex])
   @@index([level])
