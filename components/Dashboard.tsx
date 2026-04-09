@@ -7,15 +7,24 @@ import Link from 'next/link'
 export default function Dashboard() {
   const { user, token } = useAuth()
   const [stats, setStats] = useState<any>(null)
+  const [words, setWords] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!token) return
-    fetch('/api/user/stats', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json())
-      .then(setStats)
-      .catch(console.error)
-      .finally(() => setLoading(false))
+    const fetchData = async () => {
+        try {
+            const [statsRes, wordsRes] = await Promise.all([
+                fetch('/api/user/stats', { headers: { Authorization: `Bearer ${token}` } }),
+                fetch('/api/words/learned', { headers: { 'Authorization': `Bearer ${token}` } })
+            ])
+            setStats(await statsRes.json())
+            const wordsData = await wordsRes.json()
+            setWords(wordsData.words || [])
+        } catch (err) { console.error(err) }
+        finally { setLoading(false) }
+    }
+    fetchData()
   }, [token])
 
   if (!user || loading || !stats) return <div className="min-h-screen flex items-center justify-center animate-pulse">Initializing Brain...</div>
@@ -54,6 +63,21 @@ export default function Dashboard() {
                 <p className="text-slate-400 font-medium">No recent mistakes. Your memory is sharp!</p>
             )}
           </div>
+        </div>
+
+        {/* Quick Library Access */}
+        <div className="mt-8 bg-white p-10 rounded-[3rem] shadow-xl border border-indigo-50">
+            <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Knowledge Library</h3>
+                <Link href="/library" className="text-indigo-600 font-black text-xs uppercase tracking-widest hover:underline">View All Library →</Link>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {words.slice(0, 6).map((w) => (
+                    <Link key={w.id} href={`/learn?wordId=${w.id}`} className="p-4 bg-slate-50 rounded-2xl hover:bg-indigo-50 transition-all text-center">
+                        <p className="font-black text-slate-800 text-sm">{w.word}</p>
+                    </Link>
+                ))}
+            </div>
         </div>
       </div>
     </div>
