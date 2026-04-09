@@ -156,11 +156,6 @@ export default function Home() {
             </div>
 
             <div className="absolute -bottom-10 -right-6 bg-white px-10 py-6 rounded-[2.5rem] shadow-2xl border border-indigo-50 z-20 flex items-center gap-5">
-              <div className="flex -space-x-4">
-                {[1,2,3].map(i => (
-                  <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-indigo-600 flex items-center justify-center text-[10px] font-black text-white">AI</div>
-                ))}
-              </div>
               <div className="text-left">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Real-time Rendering</p>
                 <p className="text-xs font-bold text-indigo-600">Visual Triads Engaged</p>
@@ -172,7 +167,7 @@ export default function Home() {
 
       {/* Final CTA */}
       <section className="max-w-6xl mx-auto px-4 py-24 mb-24">
-        <div className="relative overflow-hidden bg-[#0a0c1a] rounded-[5rem] p-16 md:p-32 text-center text-white shadow-2xl">
+        <div className="relative overflow-hidden bg-[#0a0c1a] rounded-[5rem] p-16 md:p-32 text-center text-white shadow-2xl border border-white/5">
           <div className="absolute inset-0 opacity-30 pointer-events-none">
             <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(79,70,229,0.5),transparent)] animate-pulse" />
           </div>
