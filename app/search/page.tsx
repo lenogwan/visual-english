@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import TriadCard from '@/components/TriadCard'
+import WordCard from '@/components/WordCard'
+import SenseSwitcher from '@/components/SenseSwitcher'
 import Link from 'next/link'
 
 interface Word {
@@ -12,6 +14,7 @@ interface Word {
   phonetic: string | null
   partOfSpeech: string
   meaning: string | null
+  examples: string[]
   images: string[]
   scenario: string | null
   scenarioImages: string[]
@@ -24,39 +27,77 @@ interface Word {
 function SearchContent() {
   const [words, setWords] = useState<Word[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [activeTab, setActiveTab] = useState<'card' | 'study'>('card')
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [hasSearched, setHasSearched] = useState(false)
   const [isSuggestion, setIsSuggestion] = useState(false)
+  const [currentSense, setCurrentSense] = useState<Word | null>(null)
   
   const searchParams = useSearchParams()
   const router = useRouter()
   const { user } = useAuth()
+
+  const handleSenseSelect = (sense: any) => {
+    setCurrentSense({
+      ...sense,
+      partOfSpeech: Array.isArray(sense.partOfSpeech) ? (sense.partOfSpeech[0] || 'word') : (sense.partOfSpeech || 'word')
+    } as Word)
+  }
 
   const doSearch = useCallback(async (query: string) => {
     if (!query.trim()) return
     setLoading(true)
     setHasSearched(true)
     try {
-      const res = await fetch(`/api/words?search=${encodeURIComponent(query)}&limit=10`)
+      const res = await fetch(`/api/words?search=${encodeURIComponent(query)}&limit=20`)
       const data = await res.json()
       setIsSuggestion(data.isSuggestion || false)
+      
       if (data.words && data.words.length > 0) {
-        const normalizedWords = data.words.map((w: any) => ({
-          ...w,
-          partOfSpeech: Array.isArray(w.partOfSpeech) ? (w.partOfSpeech[0] || 'word') : (w.partOfSpeech || 'word')
-        }))
-        setWords(normalizedWords)
+        // Grouping & Prioritization Logic based on User Level
+        const userSettings = (() => {
+          try {
+            return user?.settings ? JSON.parse(user.settings) : {}
+          } catch { return {} }
+        })()
+        const targetLevel = userSettings.englishLevel || ''
+
+        // Sort results to prioritize exact matches and level matches
+        const sortedResults = [...data.words].sort((a, b) => {
+          if (targetLevel) {
+            if (a.level === targetLevel && b.level !== targetLevel) return -1
+            if (a.level !== targetLevel && b.level === targetLevel) return 1
+          }
+          return 0
+        })
+
+        const uniqueWordsMap = new Map()
+        sortedResults.forEach((w: any) => {
+          const key = w.word.toLowerCase()
+          if (!uniqueWordsMap.has(key)) {
+            uniqueWordsMap.set(key, {
+              ...w,
+              partOfSpeech: Array.isArray(w.partOfSpeech) ? (w.partOfSpeech[0] || 'word') : (w.partOfSpeech || 'word')
+            })
+          }
+        })
+
+        const normalizedWords = Array.from(uniqueWordsMap.values())
+        setWords(normalizedWords as Word[])
         setCurrentIndex(0)
+        setCurrentSense(normalizedWords[0] as Word)
+        setActiveTab('card')
       } else {
         setWords([])
+        setCurrentSense(null)
       }
     } catch (error) {
       console.error('Search failed:', error)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [user])
 
   useEffect(() => {
     const query = searchParams.get('q')
@@ -94,6 +135,7 @@ function SearchContent() {
             </svg>
           </div>
           <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Word Search</h1>
+          <p className="text-slate-500 font-medium mb-10">Look up any word to see its Triad Card.</p>
           <form onSubmit={handleSearch} className="relative group">
             <input
               type="text"
@@ -103,36 +145,19 @@ function SearchContent() {
               placeholder="Search visual english..."
               className="w-full p-6 bg-white border-2 border-indigo-100 rounded-[2rem] focus:border-indigo-400 focus:outline-none text-xl font-bold pr-36 shadow-2xl"
             />
-            <button
-              type="submit"
-              className="absolute right-3 top-3 bottom-3 px-8 bg-indigo-600 text-white rounded-[1.5rem] font-black text-xs"
-            >
-              SEARCH
-            </button>
+            <button type="submit" className="absolute right-3 top-3 bottom-3 px-8 bg-indigo-600 text-white rounded-[1.5rem] font-black text-xs hover:bg-indigo-700 transition-all">SEARCH</button>
           </form>
         </div>
       </div>
     )
   }
 
-  if (words.length === 0) {
+  if (words.length === 0 || !currentSense) {
     return (
-      <div className="min-h-screen bg-slate-50 py-12 px-6">
-        <div className="max-w-4xl mx-auto text-center">
+      <div className="min-h-screen bg-slate-50 py-12 px-6 text-center">
+        <div className="max-w-4xl mx-auto">
           <h1 className="text-5xl font-black text-slate-900 mb-12 tracking-tighter">No Matches</h1>
-          <form onSubmit={handleSearch} className="max-w-md mx-auto mb-12">
-            <div className="relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Try another..."
-                className="w-full p-6 bg-white border-2 border-indigo-100 rounded-[2rem] focus:border-indigo-400 focus:outline-none text-slate-900 shadow-xl"
-              />
-              <button type="submit" className="absolute right-3 top-3 bottom-3 px-8 bg-indigo-600 text-white rounded-[1.5rem] font-black text-xs">SEARCH</button>
-            </div>
-          </form>
-          <div className="bg-white rounded-[3rem] p-16 border-2 border-dashed border-indigo-100">
+          <div className="bg-white rounded-[3rem] p-16 border-2 border-dashed border-indigo-100 shadow-sm">
             <p className="text-2xl text-slate-400 font-bold mb-8">Nothing found for "{searchQuery}".</p>
             <Link href="/learn" className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all">Back to Learn</Link>
           </div>
@@ -141,11 +166,22 @@ function SearchContent() {
     )
   }
 
-  const word = words[currentIndex]
+  const handleNext = () => {
+    const nextIdx = (currentIndex + 1) % words.length;
+    setCurrentIndex(nextIdx);
+    setCurrentSense(words[nextIdx]);
+  }
+
+  const handlePrev = () => {
+    const prevIdx = (currentIndex - 1 + words.length) % words.length;
+    setCurrentIndex(prevIdx);
+    setCurrentSense(words[prevIdx]);
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-6" id="search-page-container">
       <div className="max-w-4xl mx-auto">
+        {/* Header with Search & Results Info */}
         <div className="mb-12 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex-1 w-full">
             <form onSubmit={handleSearch} className="relative mb-2">
@@ -156,56 +192,94 @@ function SearchContent() {
                 placeholder="Search..."
                 className="w-full p-5 bg-white border-2 border-indigo-100 rounded-3xl focus:border-indigo-400 focus:outline-none text-lg font-bold pr-32 shadow-lg"
               />
-              <button type="submit" className="absolute right-2 top-2 bottom-2 px-6 bg-indigo-600 text-white rounded-2xl font-black text-[10px] tracking-widest">SEARCH</button>
+              <button type="submit" className="absolute right-2 top-2 bottom-2 px-6 bg-indigo-600 text-white rounded-2xl font-black text-[10px] tracking-widest hover:bg-indigo-700 transition-all">SEARCH</button>
             </form>
-            {isSuggestion && <p className="px-4 text-[11px] font-bold text-slate-400 italic">Showing alphabetical dictionary suggestions:</p>}
+            {isSuggestion && <p className="px-4 text-[11px] font-bold text-slate-400 italic">Showing alphabetical suggestions:</p>}
           </div>
           
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-4 bg-white px-6 py-4 rounded-3xl border border-indigo-50 shadow-sm">
-               <div className="text-right">
-                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none mb-1">{isSuggestion ? 'Suggestions' : 'Results'}</p>
-                  <p className="text-sm font-black text-indigo-600 leading-none">{currentIndex + 1} / {words.length}</p>
-               </div>
-               <div className="w-px h-8 bg-slate-100" />
-               <div className="flex gap-1.5">
-                  <button onClick={() => setCurrentIndex((p) => (p - 1 + words.length) % words.length)} className="p-2 bg-slate-50 rounded-xl hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg></button>
-                  <button onClick={() => setCurrentIndex((p) => (p + 1) % words.length)} className="p-2 bg-slate-50 rounded-xl hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg></button>
-               </div>
-            </div>
+          <div className="flex items-center gap-3 bg-white px-6 py-4 rounded-3xl border border-indigo-50 shadow-sm relative min-h-[64px]">
+             <div className="text-right border-r border-slate-100 pr-4 mr-2">
+                <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none mb-1">{isSuggestion ? 'Suggestions' : 'Results'}</p>
+                <p className="text-sm font-black text-indigo-600 leading-none">{currentIndex + 1} / {words.length}</p>
+             </div>
+             
+             {/* Sense Switcher for multiple types (Noun/Verb) */}
+             <div className="mr-2">
+                <SenseSwitcher 
+                  word={currentSense.word}
+                  currentId={currentSense.id}
+                  onSenseSelect={handleSenseSelect}
+                  theme="indigo"
+                />
+             </div>
+
+             <div className="flex gap-1.5 ml-auto">
+                <button onClick={handlePrev} className="p-2 bg-slate-50 rounded-xl hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg></button>
+                <button onClick={handleNext} className="p-2 bg-slate-50 rounded-xl hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg></button>
+             </div>
           </div>
         </div>
 
-        {/* THIS IS THE ONLY BANNER ALLOWED */}
+        {/* Tab Switcher: Card vs Study */}
         <div className="flex gap-2 mb-10 bg-indigo-50/50 rounded-[2.5rem] p-2 border border-indigo-100 max-w-sm mx-auto shadow-inner">
-          <div className="flex-1 py-4 bg-indigo-600 text-white rounded-[2rem] font-black text-[11px] tracking-widest uppercase text-center shadow-lg">
+          <button 
+            onClick={() => setActiveTab('card')}
+            className={`flex-1 py-4 rounded-[2rem] font-black text-[11px] tracking-widest uppercase text-center transition-all ${
+              activeTab === 'card' ? 'bg-indigo-600 text-white shadow-lg' : 'text-indigo-400 hover:text-indigo-600'
+            }`}
+          >
              Triad Card
-          </div>
-          <Link 
-            href={`/learn?word=${encodeURIComponent(word.word)}`}
-            className="flex-1 py-4 text-indigo-400 hover:text-indigo-700 rounded-[2rem] font-black text-[11px] tracking-widest uppercase text-center transition-all flex items-center justify-center gap-2"
+          </button>
+          <button 
+            onClick={() => setActiveTab('study')}
+            className={`flex-1 py-4 rounded-[2rem] font-black text-[11px] tracking-widest uppercase text-center transition-all ${
+              activeTab === 'study' ? 'bg-indigo-600 text-white shadow-lg' : 'text-indigo-400 hover:text-indigo-600'
+            }`}
           >
              Study
-          </Link>
+          </button>
         </div>
 
+        {/* Dynamic Content Display */}
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <TriadCard 
-            word={word} 
-            onNext={() => setCurrentIndex((p) => (p + 1) % words.length)} 
-            onPrev={() => setCurrentIndex((p) => (p - 1 + words.length) % words.length)} 
-          />
+          {activeTab === 'card' ? (
+            <TriadCard word={currentSense} onNext={handleNext} onPrev={handlePrev} />
+          ) : (
+            <div className="max-w-xl mx-auto">
+              <WordCard
+                wordId={currentSense.id}
+                word={currentSense.word}
+                phonetic={currentSense.phonetic}
+                meaning={currentSense.meaning}
+                scenario={currentSense.scenario}
+                examples={currentSense.examples}
+                images={currentSense.images}
+                tags={currentSense.tags}
+                emotionalConnection={currentSense.emotionalConnection}
+              />
+              <div className="flex justify-between mt-8 px-6">
+                <button onClick={handlePrev} className="px-8 py-4 bg-white/50 backdrop-blur-md text-slate-500 rounded-[2rem] font-black text-[10px] tracking-widest hover:bg-white hover:text-slate-800 transition-all border border-slate-200/50 shadow-sm uppercase flex items-center gap-2">← Prev</button>
+                <button onClick={handleNext} className="px-8 py-4 bg-indigo-600 text-white rounded-[2rem] font-black text-[10px] tracking-widest hover:bg-indigo-500 hover:shadow-2xl transition-all shadow-xl uppercase flex items-center gap-2">Next →</button>
+              </div>
+            </div>
+          )}
         </div>
 
+        {/* Quick List Footer */}
         {words.length > 1 && (
           <div className="mt-16 bg-white/60 rounded-[2.5rem] p-10 border border-indigo-50 shadow-xl text-center">
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">Related Results</h3>
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">
+              {isSuggestion ? 'Browse dictionary' : 'Related Results'}
+            </h3>
             <div className="flex flex-wrap justify-center gap-3">
               {words.map((w, idx) => (
                 <button
                   key={w.id}
-                  onClick={() => setCurrentIndex(idx)}
-                  className={`px-6 py-3 rounded-2xl font-bold text-sm transition-all ${idx === currentIndex ? 'bg-indigo-600 text-white shadow-xl' : 'bg-white border border-indigo-50 text-slate-500 hover:text-indigo-600'}`}
+                  onClick={() => {
+                    setCurrentIndex(idx);
+                    setCurrentSense(w);
+                  }}
+                  className={`px-6 py-3 rounded-2xl font-bold text-sm transition-all ${w.word.toLowerCase() === currentSense.word.toLowerCase() ? 'bg-indigo-600 text-white shadow-xl scale-105' : 'bg-white border border-indigo-50 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50'}`}
                 >
                   {w.word}
                 </button>
