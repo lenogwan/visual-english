@@ -129,7 +129,7 @@ export default function TriadCard({ word: initialWord, onNext, onPrev }: TriadCa
         >
           {/* Front - Image + Definition */}
           <div className="backface-hidden absolute inset-0">
-            <div className="glass-card bg-white/95 rounded-[3.5rem] shadow-2xl overflow-hidden h-full border border-indigo-50 flex flex-col">
+            <div className="bg-white rounded-[3.5rem] shadow-2xl overflow-hidden h-full border border-indigo-50 flex flex-col">
               <div className="p-6 pb-2 flex gap-3 items-center justify-center">
                 {category && (
                   <span className="px-4 py-1 bg-slate-100 text-slate-500 rounded-full text-[10px] font-black tracking-widest border border-slate-200/50">
@@ -197,7 +197,7 @@ export default function TriadCard({ word: initialWord, onNext, onPrev }: TriadCa
 
           {/* Back - Scenario Example + Feel It */}
           <div className="backface-hidden rotate-y-180 absolute inset-0">
-            <div className="glass-card bg-white/95 rounded-[3.5rem] shadow-2xl overflow-hidden h-full border border-indigo-50 flex flex-col">
+            <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden h-full border border-indigo-50 flex flex-col">
               <div className="p-10 flex-1 flex flex-col">
                 <div className="flex items-center justify-between mb-8">
                   <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">CONTEXTUAL SCENARIO</h2>
