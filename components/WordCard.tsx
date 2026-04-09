@@ -5,7 +5,8 @@ import { useAuth } from '@/lib/auth-context'
 import UnsplashImage from '@/components/UnsplashImage'
 
 interface WordCardProps {
-  id: string
+  id?: string
+  wordId?: string
   word: string
   phonetic?: string | null
   meaning?: string | null
@@ -16,23 +17,24 @@ interface WordCardProps {
   emotionalConnection?: string | null
 }
 
-export default function WordCard({ id, word, phonetic, meaning, scenario, examples = [], images = [], partOfSpeech, emotionalConnection }: WordCardProps) {
+export default function WordCard({ id, wordId, word, phonetic, meaning, scenario, examples = [], images = [], partOfSpeech, emotionalConnection }: WordCardProps) {
   const { token } = useAuth()
   const [isFav, setIsFav] = useState(false)
-  const [exampleIndex, setExampleIndex] = useState(0)
+  const actualId = id || wordId || ''
 
   useEffect(() => {
-    if(!token) return
+    if(!token || !actualId) return
     fetch('/api/favorites', { headers: { 'Authorization': `Bearer ${token}` } })
       .then(r => r.json())
-      .then(data => setIsFav(data.favorites.some((w: any) => w.id === id)))
-  }, [token, id])
+      .then(data => setIsFav(data.favorites.some((w: any) => w.id === actualId)))
+  }, [token, actualId])
 
   const toggleFav = async () => {
+    if(!actualId) return
     const res = await fetch('/api/favorites', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ wordId: id })
+        body: JSON.stringify({ wordId: actualId })
     })
     if(res.ok) setIsFav(!isFav)
   }
