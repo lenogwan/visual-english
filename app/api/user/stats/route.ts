@@ -30,9 +30,15 @@ export async function GET(request: NextRequest) {
 
     const settings = stats?.settings ? JSON.parse(stats.settings) : {}
     const dailyGoal = parseInt(settings.dailyGoal || '20')
-    const todayProgress = progress.filter(p => p.lastReviewedAt && p.lastReviewedAt > new Date(new Date().setHours(0,0,0,0))).length
+    const learnedWords = progress.filter(p => p.learned)
+    const masteredCount = progress.filter(p => p.masteryLevel >= 4).length
+    
+    // Logic: calculate achievements on the fly
+    const calculatedAchievements = []
+    if (learnedWords.length >= 50) calculatedAchievements.push({ slug: 'pioneer', title: 'Learning Pioneer' })
+    if (masteredCount >= 50) calculatedAchievements.push({ slug: 'master-50', title: 'Master 50' })
+    if (history.length >= 100) calculatedAchievements.push({ slug: 'practitioner', title: 'Active Practitioner' })
 
-    // Aggregate mistakes by Word Name
     const mistakeCounts = history.filter(h => !h.isCorrect).reduce((acc: any, h: any) => {
         const wordText = h.word?.word || 'Unknown';
         acc[wordText] = (acc[wordText] || 0) + 1
@@ -44,19 +50,14 @@ export async function GET(request: NextRequest) {
         .slice(0, 5)
         .map(([word, count]) => ({ word, count }))
 
-    // 記憶健康指標 (Mastery)
-    const masteredCount = progress.filter(p => p.masteryLevel >= 4).length
-    
     return NextResponse.json({
         dailyGoal,
-        todayProgress,
-        totalLearned: progress.filter(p => p.learned).length,
-        totalReviewed: progress.reduce((acc, p) => acc + p.timesReviewed, 0),
+        totalLearned: learnedWords.length,
         totalWords,
         accuracy: history.length ? Math.round((history.filter(h => h.isCorrect).length / history.length) * 100) : 100,
-        dueForReview: progress.filter(p => p.nextReviewDate <= new Date()).length,
         masteryScore: totalWords ? Math.round((masteredCount / totalWords) * 100) : 0,
         refinementWords,
+        achievements: calculatedAchievements,
         trend: Array.from({ length: 30 }).map((_, i) => {
           const d = new Date()
           d.setDate(d.getDate() - (29 - i))
