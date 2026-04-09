@@ -18,13 +18,19 @@ export async function POST(request: NextRequest) {
     const userId = await getUserId(request)
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    // Quality: 1 (Forget) to 5 (Easy)
+    // Quality: 1 (Again) to 5 (Easy)
     const { wordId, quality } = await request.json()
 
     if (!wordId || typeof quality !== 'number') {
       return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 })
     }
 
+    // 1. Record in PracticeHistory
+    await prisma.practiceHistory.create({
+      data: { userId, wordId, isCorrect: quality >= 3 }
+    })
+
+    // 2. SRS calculation
     const prev = await prisma.userProgress.findUnique({ where: { userId_wordId: { userId, wordId } } })
     
     let interval = prev?.interval || 0
@@ -67,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, progress })
   } catch (error) {
-    console.error('SRS Update error:', error)
+    console.error('SRS/History Update error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -1,53 +1,3 @@
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
-}
-
-datasource db {
-  provider = "postgresql"
-  url      = env("PRISMA_DATABASE_URL")
-}
-
-model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  password      String
-  name          String?
-  role          String         @default("User")
-  settings      String         @default("{}")
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  favoriteWords FavoriteWord[]
-  quizzes       Quiz[]
-  quizAttempts  QuizAttempt[]
-  progress      UserProgress[]
-}
-
-model Word {
-  id                  String         @id @default(cuid())
-  word                String
-  partOfSpeech        Json           @default(value: "[\"unknown\"]")
-  senseIndex          Int            @default(0)
-  phonetic            String?
-  audioUrl            String?
-  meaning             String?
-  examples            String         @default("[]")
-  images              String         @default("[]")
-  scenario            String?
-  scenarioImages      String         @default("[]")
-  exampleSentence     String?
-  emotionalConnection String?
-  tags                String         @default("[]")
-  level               String         @default("A1")
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
-  favorites           FavoriteWord[]
-  progress            UserProgress[]
-
-  @@unique([word, senseIndex])
-  @@index([level])
-}
-
 model UserProgress {
   id             String    @id @default(cuid())
   userId         String
@@ -55,8 +5,9 @@ model UserProgress {
   learned        Boolean   @default(false)
   masteryLevel   Int       @default(0)
   timesReviewed  Int       @default(0)
-  interval       Int       @default(0)
-  easeFactor     Float     @default(2.5)
+  // SRS Fields
+  interval       Int       @default(0) // Days until next review
+  easeFactor     Float     @default(2.5) // Ease factor
   nextReviewDate DateTime  @default(now())
   lastReviewedAt DateTime?
   createdAt      DateTime  @default(now())
@@ -76,6 +27,16 @@ model FavoriteWord {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, wordId])
+}
+
+model PracticeHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  wordId    String
+  isCorrect Boolean
+  timestamp DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  word      Word     @relation(fields: [wordId], references: [id], onDelete: Cascade)
 }
 
 model Quiz {
