@@ -26,8 +26,8 @@ export default function Home() {
           </div>
           
           <h1 className="text-7xl md:text-[10rem] font-black tracking-tighter leading-[0.85] mb-12">
-            SHATTER THE<br />
-            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent italic px-4">BARRIER</span>
+            THINK IN<br />
+            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent italic px-4">ENGLISH</span>
           </h1>
           
           <p className="text-xl md:text-3xl text-slate-400 mb-16 max-w-3xl mx-auto font-medium leading-tight">
@@ -172,7 +172,7 @@ export default function Home() {
 
       {/* Final CTA */}
       <section className="max-w-6xl mx-auto px-4 py-24 mb-24">
-        <div className="relative overflow-hidden bg-[#0a0c1a] rounded-[5rem] p-16 md:p-32 text-center text-white shadow-2xl border border-white/5">
+        <div className="relative overflow-hidden bg-[#0a0c1a] rounded-[5rem] p-16 md:p-32 text-center text-white shadow-2xl">
           <div className="absolute inset-0 opacity-30 pointer-events-none">
             <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(79,70,229,0.5),transparent)] animate-pulse" />
           </div>
