@@ -16,7 +16,7 @@ export default function Dashboard() {
         try {
             const [statsRes, wordsRes] = await Promise.all([
                 fetch('/api/user/stats', { headers: { Authorization: `Bearer ${token}` } }),
-                fetch('/api/words/learned', { headers: { 'Authorization': `Bearer ${token}` } })
+                fetch('/api/words/learned', { headers: { Authorization: `Bearer ${token}` } })
             ])
             setStats(await statsRes.json())
             const wordsData = await wordsRes.json()
@@ -27,74 +27,67 @@ export default function Dashboard() {
     fetchData()
   }, [token])
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good Morning";
+    if (hour < 18) return "Good Afternoon";
+    return "Good Evening";
+  };
+
   if (!user || loading || !stats) return <div className="min-h-screen flex items-center justify-center animate-pulse">Initializing Brain...</div>
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-6">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl font-black mb-12">System Overview</h1>
-        
-        {/* Achievements Section */}
-        <div className="mb-8 bg-white p-10 rounded-[3rem] shadow-xl border border-indigo-50">
-            <h3 className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-6">Achievement Wall</h3>
-            {stats.achievements.length > 0 ? (
-                <div className="flex flex-wrap gap-4">
-                    {stats.achievements.map((a: any) => (
-                        <div key={a.slug} className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-amber-400 to-yellow-500 text-white rounded-full font-black text-xs shadow-lg">
-                            <span>🏆</span> {a.title}
+    <div className="min-h-screen bg-slate-50 py-12 px-6 font-sans">
+      <div className="max-w-5xl mx-auto">
+        <h1 className="text-4xl font-extrabold text-slate-900 mb-10">
+            {getGreeting()}, {user.name || 'Learner'}
+        </h1>
+
+        <section className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 mb-6">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Achievement Wall</h3>
+            <div className="flex gap-4">
+                {stats.achievements.map((a: any) => (
+                    <div key={a.slug} className="px-6 py-3 bg-amber-100 text-amber-700 rounded-full font-black text-xs">🏆 {a.title}</div>
+                ))}
+                {stats.achievements.length === 0 && <p className="text-slate-400 text-sm font-medium">Keep learning to unlock achievements!</p>}
+            </div>
+        </section>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 text-center">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Mastery Health</h3>
+                <div className="text-5xl font-extrabold text-indigo-600 mb-2">{stats.masteryScore}%</div>
+                <p className="text-sm font-bold text-slate-400 mb-6">Retention Rate</p>
+                <Link href="/learn" className="block w-full py-3 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 transition-all">Start Daily Stream</Link>
+            </div>
+
+            <div className="md:col-span-2 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                <h3 className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-6">● Refinement Zone</h3>
+                <div className="grid grid-cols-2 gap-4">
+                    {stats.refinementWords.map((w: any, i: number) => (
+                        <div key={i} className="flex justify-between items-center p-4 bg-red-50 rounded-2xl">
+                            <span className="font-bold text-red-900">{w.word.toUpperCase()}</span>
+                            <span className="text-[10px] font-black text-red-600 bg-white px-2 py-1 rounded-lg">{w.count} mistakes</span>
                         </div>
                     ))}
+                    {stats.refinementWords.length === 0 && <p className="text-slate-400 text-sm font-medium">Your memory is sharp!</p>}
                 </div>
-            ) : (
-                <p className="text-slate-400 font-medium italic">Start learning to unlock your first badge!</p>
-            )}
+            </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-indigo-50">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Mastery Health</h3>
-            <div className="text-center">
-                <div className="text-6xl font-black text-indigo-600 mb-2">{stats.masteryScore}%</div>
-                <p className="text-sm font-bold text-slate-500">Retention Rate</p>
+        <section className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+            <div className="flex justify-between mb-6">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Knowledge Library</h3>
+                <Link href="/library" className="text-indigo-600 font-bold text-[10px] uppercase">View All Library →</Link>
             </div>
-            <div className="mt-8">
-                <Link href="/learn" className="block w-full py-4 bg-indigo-600 text-white text-center font-black rounded-2xl">Start Daily Stream</Link>
-            </div>
-          </div>
-
-          <div className="lg:col-span-2 bg-white p-10 rounded-[3rem] shadow-xl border border-indigo-50">
-            <h3 className="text-xs font-black text-red-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" /> Refinement Zone
-            </h3>
-            {stats.refinementWords.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {stats.refinementWords.map((w: any, idx: number) => (
-                        <div key={idx} className="flex items-center justify-between p-4 bg-red-50 rounded-2xl">
-                            <span className="font-bold text-red-800 uppercase">{w.word}</span>
-                            <span className="text-xs font-black bg-red-200 px-3 py-1 rounded-full text-red-800">{w.count} mistakes</span>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <p className="text-slate-400 font-medium">No recent mistakes. Your memory is sharp!</p>
-            )}
-          </div>
-        </div>
-
-        {/* Quick Library Access */}
-        <div className="mt-8 bg-white p-10 rounded-[3rem] shadow-xl border border-indigo-50">
-            <div className="flex items-center justify-between mb-8">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Knowledge Library</h3>
-                <Link href="/library" className="text-indigo-600 font-black text-xs uppercase tracking-widest hover:underline">View All Library →</Link>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {words.slice(0, 6).map((w) => (
-                    <Link key={w.id} href={`/study/${w.id}`} className="p-4 bg-slate-50 rounded-2xl hover:bg-indigo-50 transition-all text-center">
-                        <p className="font-black text-slate-800 text-sm">{w.word}</p>
+            <div className="flex flex-wrap gap-3">
+                {words.slice(0, 10).map((w) => (
+                    <Link key={w.id} href={`/study/${w.id}`} className="px-6 py-3 bg-slate-50 text-slate-700 rounded-2xl font-bold text-sm hover:bg-indigo-50 transition-colors">
+                        {w.word}
                     </Link>
                 ))}
             </div>
-        </div>
+        </section>
       </div>
     </div>
   )
