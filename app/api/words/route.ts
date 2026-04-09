@@ -36,7 +36,6 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
 
-    // Remove tag filtering from Prisma query to handle it manually for exact matching
     const [allPotentialWords, totalCount] = await Promise.all([
       prisma.word.findMany({
         where: search ? { word: { contains: search, mode: 'insensitive' } } : {},
@@ -49,24 +48,20 @@ export async function GET(request: NextRequest) {
 
     let words = allPotentialWords;
     
-    // Level filtering (if provided)
     if (level && level !== 'All' && level !== 'ANY') {
       words = words.filter((w: any) => w.level === level)
     }
 
-    // Exact Category filtering
     if (topic && topic !== 'All' && topic !== 'ANY') {
       words = words.filter((w: any) => {
         const tags = safeJsonParse(w.tags, []);
-        return tags.includes(topic); // Exact match
+        return tags.includes(topic);
       });
     }
 
-    // Apply pagination manually
-    const total = words.length;
+    let total = words.length;
     words = words.slice(offset, offset + limit);
 
-    // If search yielded no results, fetch alphabetical suggestions (A-Z)
     let isSuggestion = false;
     if (words.length === 0 && search) {
       words = await prisma.word.findMany({
@@ -77,25 +72,19 @@ export async function GET(request: NextRequest) {
       isSuggestion = true;
     }
 
-    // Intelligent Sorting: If we have a search term, prioritize exact matches
     if (search && !isSuggestion) {
       const lowerSearch = search.toLowerCase();
       words.sort((a, b) => {
         const aWord = a.word.toLowerCase();
         const bWord = b.word.toLowerCase();
-        
         const aExact = aWord === lowerSearch;
         const bExact = bWord === lowerSearch;
-        
         if (aExact && !bExact) return -1;
         if (!aExact && bExact) return 1;
-        
-        // Secondary sort: Starts with search term
         const aStarts = aWord.startsWith(lowerSearch);
         const bStarts = bWord.startsWith(lowerSearch);
         if (aStarts && !bStarts) return -1;
         if (!aStarts && bStarts) return 1;
-        
         return aWord.localeCompare(bWord);
       });
     }
@@ -158,7 +147,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Word is required' }, { status: 400 })
     }
 
-    // Ensure partOfSpeech is an array, default to ["unknown"] if not provided or invalid
     let partsToProcess: string[];
     if (Array.isArray(partOfSpeech)) {
       partsToProcess = partOfSpeech.filter((p: any) => typeof p === 'string' && p.trim() !== '');
