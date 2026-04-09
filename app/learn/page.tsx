@@ -75,18 +75,27 @@ function LearnContent() {
         allWords = data.words || []
       }
 
-      // Group by word string to ensure each word appears only once
+      // Group by word string and pick the best sense based on user level
       const uniqueWordsMap = new Map()
-      allWords.forEach((item: any) => {
-        if (!item.word) return // Safety check
-        if (!uniqueWordsMap.has(item.word.toLowerCase())) {
-          uniqueWordsMap.set(item.word.toLowerCase(), item)
+      
+      const sortedAllWords = [...allWords].sort((a, b) => {
+        if (targetLevel) {
+          if (a.level === targetLevel && b.level !== targetLevel) return -1
+          if (a.level !== targetLevel && b.level === targetLevel) return 1
+        }
+        return 0
+      })
+
+      sortedAllWords.forEach((item: any) => {
+        if (!item.word) return
+        const key = item.word.toLowerCase()
+        if (!uniqueWordsMap.has(key)) {
+          uniqueWordsMap.set(key, item)
         }
       })
 
       const uniqueWords = Array.from(uniqueWordsMap.values())
 
-      // For favorites mode, show ALL. For standard mode, shuffle and limit to goal.
       if (isFavoritesMode) {
         setWords(uniqueWords)
       } else {
@@ -134,7 +143,7 @@ function LearnContent() {
       const w = words[currentIndex]
       setCurrentSense({
         ...w,
-        partOfSpeech: w.partOfSpeech || 'word'
+        partOfSpeech: Array.isArray(w.partOfSpeech) ? (w.partOfSpeech[0] || 'word') : (w.partOfSpeech || 'word')
       } as Word)
     }
   }, [currentIndex, words])
@@ -142,15 +151,19 @@ function LearnContent() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-xl text-gray-600">Loading words...</div>
+        <div className="w-16 h-16 border-4 border-indigo-400/20 border-t-indigo-600 rounded-full animate-spin"></div>
       </div>
     )
   }
 
   if (words.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-xl text-gray-600">No words found. Import word bank first.</div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center text-center px-6">
+        <div>
+          <div className="text-6xl mb-6 text-slate-300">📖</div>
+          <p className="text-xl font-bold text-slate-400">No words found for your level.</p>
+          <p className="text-sm text-slate-400 mt-2">Try changing your level in Profile Settings or import more words.</p>
+        </div>
       </div>
     )
   }
@@ -166,8 +179,6 @@ function LearnContent() {
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header Removed for Compact Design */}
-
         {/* Tabs */}
         <div className="flex gap-2 mb-6 glass-card bg-white/60 rounded-3xl p-1.5 shadow-md border border-indigo-100">
           <button
@@ -205,7 +216,6 @@ function LearnContent() {
 
         {/* Compact Dashboard Bar: Metadata + Senses */}
         <div className="relative flex items-center justify-center mb-10 p-2 glass-card bg-white/40 rounded-full border border-indigo-50/50 min-h-[56px]">
-          {/* Centered Session Context */}
           <div className="flex items-center gap-3 px-6">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-r border-slate-200 pr-3">
               Word {currentIndex + 1} / {words.length}
@@ -226,13 +236,17 @@ function LearnContent() {
             )}
           </div>
 
-          {/* Right-aligned SenseSwitcher (only if multiple senses exist) */}
           <div className="absolute right-2 top-1/2 -translate-y-1/2">
             {currentSense && (
               <SenseSwitcher
                 word={currentSense.word}
                 currentId={currentSense.id}
-                onSenseSelect={(sense: any) => setCurrentSense(sense)}
+                onSenseSelect={(sense: any) => {
+                  setCurrentSense({
+                    ...sense,
+                    partOfSpeech: Array.isArray(sense.partOfSpeech) ? (sense.partOfSpeech[0] || 'word') : (sense.partOfSpeech || 'word')
+                  })
+                }}
                 theme="indigo"
               />
             )}
@@ -255,18 +269,19 @@ function LearnContent() {
                 examples={currentSense.examples}
                 images={currentSense.images}
                 tags={currentSense.tags}
+                partOfSpeech={currentSense.partOfSpeech}
                 emotionalConnection={currentSense.emotionalConnection}
               />
-              <div className="flex justify-between mt-6">
+              <div className="flex justify-between mt-6 px-6">
                 <button
                   onClick={handlePrev}
-                  className="px-6 py-3 bg-gray-200 rounded-xl font-medium hover:bg-gray-300 transition-colors"
+                  className="px-8 py-4 bg-white/50 backdrop-blur-md text-slate-500 rounded-[2rem] font-black text-[10px] tracking-widest hover:bg-white hover:text-slate-800 transition-all border border-slate-200/50 shadow-sm uppercase flex items-center gap-2"
                 >
                   ← Previous
                 </button>
                 <button
                   onClick={handleNext}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity"
+                  className="px-8 py-4 bg-indigo-600 text-white rounded-[2rem] font-black text-[10px] tracking-widest hover:bg-indigo-500 hover:shadow-2xl transition-all shadow-xl uppercase flex items-center gap-2"
                 >
                   Next →
                 </button>
@@ -276,16 +291,16 @@ function LearnContent() {
           {activeTab === 'images' && currentSense && (
             <>
               <ImageSearch word={currentSense} />
-              <div className="flex justify-between mt-6">
+              <div className="flex justify-between mt-6 px-6">
                 <button
                   onClick={handlePrev}
-                  className="px-6 py-3 bg-gray-200 rounded-xl font-medium hover:bg-gray-300 transition-colors"
+                  className="px-8 py-4 bg-white/50 backdrop-blur-md text-slate-500 rounded-[2rem] font-black text-[10px] tracking-widest hover:bg-white hover:text-slate-800 transition-all border border-slate-200/50 shadow-sm uppercase flex items-center gap-2"
                 >
                   ← Previous
                 </button>
                 <button
                   onClick={handleNext}
-                  className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity"
+                  className="px-8 py-4 bg-indigo-600 text-white rounded-[2rem] font-black text-[10px] tracking-widest hover:bg-indigo-500 hover:shadow-2xl transition-all shadow-xl uppercase flex items-center gap-2"
                 >
                   Next →
                 </button>
