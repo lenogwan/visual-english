@@ -11,7 +11,7 @@ interface Word {
   id: string
   word: string
   phonetic: string | null
-  partOfSpeech: string | string[]
+  partOfSpeech: string // Matches TriadCard expectation
   meaning: string | null
   images: string[]
   scenario: string | null
@@ -42,7 +42,12 @@ function SearchContent() {
       const res = await fetch(`/api/words?search=${encodeURIComponent(query)}&limit=10`)
       const data = await res.json()
       if (data.words && data.words.length > 0) {
-        setWords(data.words)
+        // Normalize words data to match UI expectations
+        const normalizedWords = data.words.map((w: any) => ({
+          ...w,
+          partOfSpeech: Array.isArray(w.partOfSpeech) ? (w.partOfSpeech[0] || 'word') : (w.partOfSpeech || 'word')
+        }))
+        setWords(normalizedWords)
         setCurrentIndex(0)
       } else {
         setWords([])
