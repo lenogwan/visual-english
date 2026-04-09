@@ -1,12 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import Link from 'next/link'
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { user, logout } = useAuth()
+  const userMenuRef = useRef<HTMLDivElement>(null)
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   return (
     <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-indigo-100 shadow-sm">
@@ -48,37 +61,60 @@ export default function Navbar() {
             <div className="h-6 w-px bg-slate-200 mx-2" />
 
             {user ? (
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-4 relative" ref={userMenuRef}>
                 {(user.role === 'Admin' || user.role === 'admin' || user.role === 'Teacher' || user.role === 'teacher') && (
                   <Link href="/admin" className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl font-bold hover:bg-indigo-100 transition-colors">
                     Admin
                   </Link>
                 )}
-                <div className="flex flex-col items-end mr-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">
-                    {user.role}
-                  </span>
-                  <span className="text-sm font-semibold text-slate-700 leading-tight">{user.email}</span>
-                </div>
-                <Link
-                  href="/profile"
-                  className="p-2 text-slate-500 hover:text-indigo-600 transition-colors"
-                  title="Profile Settings"
+                
+                <button 
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-50 transition-colors group"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </Link>
-                <button
-                  onClick={logout}
-                  className="p-2 text-slate-500 hover:text-red-500 transition-colors"
-                  title="Logout"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
+                  <div className="flex flex-col items-end">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">
+                      {user.role}
+                    </span>
+                    <span className="text-sm font-bold text-slate-700 leading-tight group-hover:text-indigo-600">
+                      {user.name || user.email.split('@')[0]}
+                    </span>
+                  </div>
+                  <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-xs border border-indigo-200 shadow-sm group-hover:bg-indigo-200">
+                    {(user.name || user.email)[0].toUpperCase()}
+                  </div>
                 </button>
+
+                {userMenuOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-indigo-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200 z-[60]">
+                    <div className="px-4 py-2 border-b border-slate-50 mb-1">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Signed in as</p>
+                      <p className="text-xs font-semibold text-slate-600 truncate">{user.email}</p>
+                    </div>
+                    <Link 
+                      href="/profile" 
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      Profile Settings
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        logout();
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors text-left"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Log out
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <Link
@@ -120,8 +156,17 @@ export default function Navbar() {
               <div className="border-t border-slate-100 pt-4 px-4">
                 {user ? (
                   <div className="flex flex-col gap-4">
-                    <span className="text-sm font-semibold text-slate-600">{user.email}</span>
-                    <button onClick={logout} className="text-red-500 font-bold">Logout</button>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold border border-indigo-200">
+                        {(user.name || user.email)[0].toUpperCase()}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-800">{user.name || user.email.split('@')[0]}</span>
+                        <span className="text-xs text-slate-500">{user.email}</span>
+                      </div>
+                    </div>
+                    <Link href="/profile" className="text-slate-600 font-bold">Profile Settings</Link>
+                    <button onClick={logout} className="text-red-500 font-bold text-left">Log out</button>
                   </div>
                 ) : (
                   <Link href="/login" className="block py-3 text-center bg-indigo-600 text-white rounded-xl font-bold">Login</Link>
