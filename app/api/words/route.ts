@@ -144,22 +144,23 @@ export async function POST(request: NextRequest) {
     }
 
     const createdWords = [];
-    for (const currentPartOfSpeech of partsToProcess) {
-      // Find the next available senseIndex for this word
-      const maxSense = await prisma.word.findFirst({
-        where: { word },
-        orderBy: { senseIndex: 'desc' },
-        select: { senseIndex: true }
-      });
-      
-      const nextSenseIndex = (maxSense?.senseIndex ?? -1) + 1;
+    
+    // Get the current max senseIndex once before the loop
+    const maxSenseResult = await prisma.word.findFirst({
+      where: { word },
+      orderBy: { senseIndex: 'desc' },
+      select: { senseIndex: true }
+    });
+    
+    let nextAvailableIndex = (maxSenseResult?.senseIndex ?? -1) + 1;
 
+    for (const currentPartOfSpeech of partsToProcess) {
       const newWordEntry = await prisma.word.create({
         data: {
           word,
           // Store as an array to match Json type and schema default
           partOfSpeech: [currentPartOfSpeech],
-          senseIndex: nextSenseIndex,
+          senseIndex: nextAvailableIndex,
           phonetic: phonetic || null,
           meaning: meaning || null,
           exampleSentence: exampleSentence || null,
@@ -173,6 +174,7 @@ export async function POST(request: NextRequest) {
         },
       });
       createdWords.push(newWordEntry);
+      nextAvailableIndex++; // Increment for the next part of speech in the same request
     }
 
     return NextResponse.json({ success: true, word: createdWords.length === 1 ? createdWords[0] : createdWords });

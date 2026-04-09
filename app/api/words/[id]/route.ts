@@ -25,16 +25,45 @@ export async function PUT(
     }
 
     jwt.verify(token, JWT_SECRET) as { userId: string }
+    const body = await request.json()
     const { id } = await params
 
-    const body = await request.json()
+    // Check if the word string or senseIndex is being changed
+    const existingWord = await prisma.word.findUnique({
+      where: { id },
+      select: { word: true, senseIndex: true }
+    });
+
+    let finalSenseIndex = body.senseIndex;
+
+    // If the word name is changing, we need to ensure the new word + senseIndex doesn't conflict
+    if (existingWord && body.word && body.word !== existingWord.word) {
+      const conflict = await prisma.word.findUnique({
+        where: {
+          word_senseIndex: {
+            word: body.word,
+            senseIndex: body.senseIndex ?? 0
+          }
+        }
+      });
+
+      if (conflict && conflict.id !== id) {
+        // Find next available index for the new word
+        const maxSense = await prisma.word.findFirst({
+          where: { word: body.word },
+          orderBy: { senseIndex: 'desc' },
+          select: { senseIndex: true }
+        });
+        finalSenseIndex = (maxSense?.senseIndex ?? -1) + 1;
+      }
+    }
 
     const word = await (prisma.word as any).update({
       where: { id },
       data: {
         word: body.word,
         partOfSpeech: body.partOfSpeech,
-        senseIndex: body.senseIndex,
+        senseIndex: finalSenseIndex,
         phonetic: body.phonetic,
         meaning: body.meaning,
         scenario: body.scenario,
