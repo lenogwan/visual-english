@@ -73,6 +73,11 @@ export default function WordCard({
     }
   }
 
+  function safeJsonParse(data: any, fallback: any = []) {
+    if (typeof data !== 'string') return data || fallback
+    try { return JSON.parse(data) } catch (e) { return fallback }
+  }
+
   const displayExamples = examples.length > 0 ? examples : ['No examples available.']
 
   const playPronunciation = () => {
@@ -96,15 +101,15 @@ export default function WordCard({
   const prevExample = () => setExampleIndex(exampleIndex === 0 ? displayExamples.length - 1 : exampleIndex - 1)
   const nextExample = () => setExampleIndex(exampleIndex >= displayExamples.length - 1 ? 0 : exampleIndex + 1)
 
-  // UNIFIED LOGIC: Match TriadCard
+  // UNIFIED LOGIC: Extract category that isn't POS
   const displayPOS = (Array.isArray(partOfSpeech) ? partOfSpeech[0] : partOfSpeech) || tags[0] || 'word'
-  const displayCategory = tags[1] || ''
+  const tagList = Array.isArray(tags) ? tags : safeJsonParse(tags, []);
+  const displayCategory = tagList.find((t: string) => t.toLowerCase() !== displayPOS.toLowerCase()) || ''
 
   return (
     <div className="max-w-6xl mx-auto p-4">
       <div className="glass-card bg-white/80 rounded-[2.5rem] shadow-xl overflow-hidden border border-indigo-100">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
-          {/* Left Side - Image & Visual Essence */}
           <div className="p-8">
             <div className="rounded-3xl overflow-hidden mb-8 shadow-md border border-indigo-50 aspect-video lg:aspect-square relative group">
               <UnsplashImage
@@ -139,9 +144,7 @@ export default function WordCard({
               </div>
           </div>
 
-          {/* Right Side - Word Info */}
           <div className="p-10 bg-white/60 backdrop-blur-sm border-l border-indigo-100 flex flex-col justify-center">
-            {/* Tags */}
             <div className="flex flex-wrap gap-2 mb-6 items-center">
               {displayCategory && (
                 <span className="px-4 py-1.5 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold border border-indigo-200 tracking-wider">
@@ -165,13 +168,12 @@ export default function WordCard({
                   title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
                 >
                   <svg className="w-6 h-6" fill={isFavorited ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                   </svg>
                 </button>
               )}
             </div>
 
-            {/* Word & Phonetic */}
             <div className="mb-10">
               <div className="flex items-center gap-5 mb-3">
                 <h1 className="text-6xl font-black text-slate-900 tracking-tighter">{word}</h1>
@@ -187,13 +189,11 @@ export default function WordCard({
               <p className="text-2xl text-slate-500 font-medium tracking-wide">{phonetic}</p>
             </div>
 
-            {/* Definition */}
             <div className="mb-8">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">DEFINITION</p>
               <p className="text-xl text-slate-800 leading-relaxed font-medium">{meaning}</p>
             </div>
 
-            {/* Scenario */}
             {scenario && (
               <div className="mb-8">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">SCENARIO</p>
@@ -203,7 +203,6 @@ export default function WordCard({
               </div>
             )}
 
-            {/* Example */}
             <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 border border-indigo-100 shadow-md">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
