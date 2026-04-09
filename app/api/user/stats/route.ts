@@ -32,16 +32,17 @@ export async function GET(request: NextRequest) {
     const dailyGoal = parseInt(settings.dailyGoal || '20')
     const todayProgress = progress.filter(p => p.lastReviewedAt && p.lastReviewedAt > new Date(new Date().setHours(0,0,0,0))).length
 
-    // 錯誤率 Top 5 (Refinement Zone)
+    // Aggregate mistakes by Word Name
     const mistakeCounts = history.filter(h => !h.isCorrect).reduce((acc: any, h) => {
-        acc[h.wordId] = (acc[h.wordId] || 0) + 1
+        const wordText = h.word?.word || 'Unknown';
+        acc[wordText] = (acc[wordText] || 0) + 1
         return acc
     }, {})
     
     const refinementWords = Object.entries(mistakeCounts)
         .sort((a: any, b: any) => b[1] - a[1])
         .slice(0, 5)
-        .map(([id, count]) => ({ id, count }))
+        .map(([word, count]) => ({ word, count }))
 
     // 記憶健康指標 (Mastery)
     const masteredCount = progress.filter(p => p.masteryLevel >= 4).length
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
         totalLearned: progress.filter(p => p.learned).length,
         totalReviewed: progress.reduce((acc, p) => acc + p.timesReviewed, 0),
         totalWords,
-        streak: 0, 
+        streak: 0,
         favoritesCount: 0, 
         accuracy: history.length ? Math.round((history.filter(h => h.isCorrect).length / history.length) * 100) : 100,
         dueForReview: progress.filter(p => p.nextReviewDate <= new Date()).length,

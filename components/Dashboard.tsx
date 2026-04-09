@@ -43,9 +43,9 @@ export default function Dashboard() {
             </h3>
             {stats.refinementWords.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {stats.refinementWords.map((w: any) => (
-                        <div key={w.id} className="flex items-center justify-between p-4 bg-red-50 rounded-2xl">
-                            <span className="font-bold text-red-800">Word ID: {w.id.slice(0,6)}</span>
+                    {stats.refinementWords.map((w: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between p-4 bg-red-50 rounded-2xl">
+                            <span className="font-bold text-red-800 uppercase">{w.word}</span>
                             <span className="text-xs font-black bg-red-200 px-3 py-1 rounded-full text-red-800">{w.count} mistakes</span>
                         </div>
                     ))}
