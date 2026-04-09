@@ -25,9 +25,9 @@ export default function Home() {
             Neural Learning Protocol 2.0
           </div>
           
-          <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] mb-12">
+          <h1 className="text-7xl md:text-8xl font-black tracking-tighter leading-[0.9] mb-12">
             THINK IN ENGLISH,<br />
-            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent italic px-4">NOT TRANSLATION.</span>
+            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent px-4">WITHOUT TRANSLATION.</span>
           </h1>
           
           <p className="text-xl md:text-3xl text-slate-400 mb-16 max-w-3xl mx-auto font-medium leading-tight">
