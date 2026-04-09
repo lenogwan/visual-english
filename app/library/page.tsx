@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '@/lib/auth-context'
+import Link from 'next/link'
 
 export default function LibraryPage() {
   const { token } = useAuth()
@@ -42,14 +43,18 @@ export default function LibraryPage() {
         
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {filteredWords.map((w) => (
-            <div key={w.id} className="bg-white p-6 rounded-3xl shadow-sm border border-indigo-50 hover:shadow-lg transition-all text-center group">
+            <Link 
+              key={w.id} 
+              href={`/study/${w.id}`} 
+              className="block bg-white p-6 rounded-3xl shadow-sm border border-indigo-50 hover:shadow-lg hover:border-indigo-200 transition-all text-center group"
+            >
               <p className="text-lg font-black text-slate-800 mb-3 group-hover:text-indigo-600 transition-colors">{w.word}</p>
               <div className="flex justify-center gap-1">
                  {[...Array(5)].map((_, i) => (
                     <div key={i} className={`h-1.5 w-full max-w-[20px] rounded ${i < (w.masteryLevel || 0) ? 'bg-indigo-500' : 'bg-slate-100'}`} />
                  ))}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
