@@ -93,20 +93,19 @@ function SearchContent() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Search Words</h1>
-          <p className="text-slate-500 font-medium mb-10">Look up any word to see its Triad Card.</p>
+          <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Word Search</h1>
           <form onSubmit={handleSearch} className="relative group">
             <input
               type="text"
               autoFocus
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Enter word..."
-              className="w-full p-6 bg-white border-2 border-indigo-100 rounded-[2rem] focus:border-indigo-400 focus:outline-none focus:ring-8 focus:ring-indigo-400/5 text-slate-900 placeholder-slate-300 transition-all text-xl font-bold pr-36 shadow-2xl shadow-indigo-100/50"
+              placeholder="Search visual english..."
+              className="w-full p-6 bg-white border-2 border-indigo-100 rounded-[2rem] focus:border-indigo-400 focus:outline-none text-xl font-bold pr-36 shadow-2xl"
             />
             <button
               type="submit"
-              className="absolute right-3 top-3 bottom-3 px-8 bg-gradient-to-br from-indigo-600 to-indigo-700 text-white rounded-[1.5rem] font-black text-xs tracking-widest hover:scale-105 transition-all active:scale-95 shadow-lg shadow-indigo-200"
+              className="absolute right-3 top-3 bottom-3 px-8 bg-indigo-600 text-white rounded-[1.5rem] font-black text-xs"
             >
               SEARCH
             </button>
@@ -127,14 +126,14 @@ function SearchContent() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Try another word..."
+                placeholder="Try another..."
                 className="w-full p-6 bg-white border-2 border-indigo-100 rounded-[2rem] focus:border-indigo-400 focus:outline-none text-slate-900 shadow-xl"
               />
               <button type="submit" className="absolute right-3 top-3 bottom-3 px-8 bg-indigo-600 text-white rounded-[1.5rem] font-black text-xs">SEARCH</button>
             </div>
           </form>
           <div className="bg-white rounded-[3rem] p-16 border-2 border-dashed border-indigo-100">
-            <p className="text-2xl text-slate-400 font-bold mb-8">No results for "{searchQuery}".</p>
+            <p className="text-2xl text-slate-400 font-bold mb-8">Nothing found for "{searchQuery}".</p>
             <Link href="/learn" className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all">Back to Learn</Link>
           </div>
         </div>
@@ -145,7 +144,7 @@ function SearchContent() {
   const word = words[currentIndex]
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-6">
+    <div className="min-h-screen bg-slate-50 py-12 px-6" id="search-page-container">
       <div className="max-w-4xl mx-auto">
         <div className="mb-12 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex-1 w-full">
@@ -159,7 +158,7 @@ function SearchContent() {
               />
               <button type="submit" className="absolute right-2 top-2 bottom-2 px-6 bg-indigo-600 text-white rounded-2xl font-black text-[10px] tracking-widest">SEARCH</button>
             </form>
-            {isSuggestion && <p className="px-4 text-[11px] font-bold text-slate-400 italic">Showing suggestions from dictionary:</p>}
+            {isSuggestion && <p className="px-4 text-[11px] font-bold text-slate-400 italic">Showing alphabetical dictionary suggestions:</p>}
           </div>
           
           <div className="flex items-center gap-3">
@@ -177,13 +176,14 @@ function SearchContent() {
           </div>
         </div>
 
-        <div className="flex gap-2 mb-10 bg-white/80 backdrop-blur-md rounded-[2.5rem] p-2 border border-indigo-50 shadow-xl max-w-md mx-auto">
+        {/* THIS IS THE ONLY BANNER ALLOWED */}
+        <div className="flex gap-2 mb-10 bg-indigo-50/50 rounded-[2.5rem] p-2 border border-indigo-100 max-w-sm mx-auto shadow-inner">
           <div className="flex-1 py-4 bg-indigo-600 text-white rounded-[2rem] font-black text-[11px] tracking-widest uppercase text-center shadow-lg">
              Triad Card
           </div>
           <Link 
             href={`/learn?word=${encodeURIComponent(word.word)}`}
-            className="flex-1 py-4 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 rounded-[2rem] font-black text-[11px] tracking-widest uppercase text-center transition-all"
+            className="flex-1 py-4 text-indigo-400 hover:text-indigo-700 rounded-[2rem] font-black text-[11px] tracking-widest uppercase text-center transition-all flex items-center justify-center gap-2"
           >
              Study
           </Link>
@@ -205,7 +205,7 @@ function SearchContent() {
                 <button
                   key={w.id}
                   onClick={() => setCurrentIndex(idx)}
-                  className={`px-6 py-3 rounded-2xl font-bold text-sm transition-all ${idx === currentIndex ? 'bg-indigo-600 text-white shadow-xl scale-105' : 'bg-white border border-indigo-50 text-slate-500 hover:text-indigo-600'}`}
+                  className={`px-6 py-3 rounded-2xl font-bold text-sm transition-all ${idx === currentIndex ? 'bg-indigo-600 text-white shadow-xl' : 'bg-white border border-indigo-50 text-slate-500 hover:text-indigo-600'}`}
                 >
                   {w.word}
                 </button>
