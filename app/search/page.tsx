@@ -29,6 +29,7 @@ function SearchContent() {
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [hasSearched, setHasSearched] = useState(false)
+  const [isSuggestion, setIsSuggestion] = useState(false)
   
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -41,6 +42,7 @@ function SearchContent() {
     try {
       const res = await fetch(`/api/words?search=${encodeURIComponent(query)}&limit=10`)
       const data = await res.json()
+      setIsSuggestion(data.isSuggestion || false)
       if (data.words && data.words.length > 0) {
         // Normalize words data to match UI expectations
         const normalizedWords = data.words.map((w: any) => ({
@@ -119,7 +121,7 @@ function SearchContent() {
     )
   }
 
-  // No Results State
+  // No Results State (Should technically not be hit now because of suggestions, but kept for robustness)
   if (words.length === 0) {
     return (
       <div className="min-h-screen bg-slate-50 py-12 px-6">
@@ -172,7 +174,7 @@ function SearchContent() {
         {/* Search Header */}
         <div className="mb-12 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex-1 w-full">
-            <form onSubmit={handleSearch} className="relative group">
+            <form onSubmit={handleSearch} className="relative group mb-2">
               <input
                 type="text"
                 value={searchQuery}
@@ -187,11 +189,20 @@ function SearchContent() {
                 SEARCH
               </button>
             </form>
+            {isSuggestion && (
+              <p className="px-4 text-[11px] font-bold text-slate-400 italic">
+                No direct matches for "{searchQuery}". Showing words from our dictionary:
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-4 bg-white px-6 py-4 rounded-3xl border border-indigo-50 shadow-sm">
              <div className="text-right">
-                <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none mb-1">Results</p>
-                <p className="text-sm font-black text-indigo-600 leading-none">{currentIndex + 1} <span className="text-slate-300 mx-0.5">/</span> {words.length}</p>
+                <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none mb-1">
+                  {isSuggestion ? 'Suggestions (A-Z)' : 'Results'}
+                </p>
+                <p className="text-sm font-black text-indigo-600 leading-none">
+                  {isSuggestion ? 'Browse' : `${currentIndex + 1} / ${words.length}`}
+                </p>
              </div>
              <div className="w-px h-8 bg-slate-100" />
              <div className="flex gap-1.5">
@@ -265,7 +276,9 @@ function SearchContent() {
         {/* Quick List Footer */}
         {words.length > 1 && (
           <div className="mt-16 bg-white/60 backdrop-blur-sm rounded-[2.5rem] p-10 border border-indigo-50 shadow-xl">
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">Related Results</h3>
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">
+              {isSuggestion ? 'Dictionary (A-Z)' : 'Related Results'}
+            </h3>
             <div className="flex flex-wrap gap-3 max-h-48 overflow-y-auto custom-scrollbar p-1">
               {words.map((w, idx) => (
                 <button

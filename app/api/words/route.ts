@@ -36,9 +36,9 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
 
-    const where: any = {}
+    let where: any = {}
     if (search) {
-      where.word = { contains: search }
+      where.word = { contains: search, mode: 'insensitive' }
     }
 
     if (level && level !== 'All' && level !== 'ANY') {
@@ -58,13 +58,13 @@ export async function GET(request: NextRequest) {
           none: {
             userId: auth.id,
             learned: true,
-            masteryLevel: { gte: 5 } // Consider 'mastered' at level 5
+            masteryLevel: { gte: 5 }
           }
         }
       }
     }
 
-    const [words, total] = await Promise.all([
+    let [words, total] = await Promise.all([
       prisma.word.findMany({
         where,
         take: limit,
@@ -74,6 +74,40 @@ export async function GET(request: NextRequest) {
       prisma.word.count({ where }),
     ])
 
+    // If search yielded no results, fetch alphabetical suggestions (A-Z)
+    let isSuggestion = false;
+    if (words.length === 0 && search) {
+      words = await prisma.word.findMany({
+        take: limit,
+        orderBy: { word: 'asc' },
+      });
+      total = await prisma.word.count();
+      isSuggestion = true;
+    }
+
+    // Intelligent Sorting: If we have a search term, prioritize exact matches
+    if (search && !isSuggestion) {
+      const lowerSearch = search.toLowerCase();
+      words.sort((a, b) => {
+        const aWord = a.word.toLowerCase();
+        const bWord = b.word.toLowerCase();
+        
+        const aExact = aWord === lowerSearch;
+        const bExact = bWord === lowerSearch;
+        
+        if (aExact && !bExact) return -1;
+        if (!aExact && bExact) return 1;
+        
+        // Secondary sort: Starts with search term
+        const aStarts = aWord.startsWith(lowerSearch);
+        const bStarts = bWord.startsWith(lowerSearch);
+        if (aStarts && !bStarts) return -1;
+        if (!aStarts && bStarts) return 1;
+        
+        return aWord.localeCompare(bWord);
+      });
+    }
+
     return NextResponse.json({
       words: words.map((w: any) => {
         let displayPos = 'word';
@@ -81,7 +115,6 @@ export async function GET(request: NextRequest) {
         if (Array.isArray(pos)) {
           displayPos = pos[0] || 'word';
         } else if (typeof pos === 'string') {
-          // If it's a string, it might be a JSON string like '["noun"]' or just 'noun'
           const parsed = safeJsonParse(pos, [pos]);
           displayPos = Array.isArray(parsed) ? (parsed[0] || 'word') : (parsed || 'word');
         }
@@ -98,6 +131,7 @@ export async function GET(request: NextRequest) {
       total,
       limit,
       offset,
+      isSuggestion
     })
   } catch (error) {
     console.error('Words error:', error)
@@ -145,7 +179,6 @@ export async function POST(request: NextRequest) {
 
     const createdWords = [];
     
-    // Get the current max senseIndex once before the loop
     const maxSenseResult = await prisma.word.findFirst({
       where: { word },
       orderBy: { senseIndex: 'desc' },
@@ -158,7 +191,6 @@ export async function POST(request: NextRequest) {
       const newWordEntry = await prisma.word.create({
         data: {
           word,
-          // Store as an array to match Json type and schema default
           partOfSpeech: [currentPartOfSpeech],
           senseIndex: nextAvailableIndex,
           phonetic: phonetic || null,
@@ -174,7 +206,7 @@ export async function POST(request: NextRequest) {
         },
       });
       createdWords.push(newWordEntry);
-      nextAvailableIndex++; // Increment for the next part of speech in the same request
+      nextAvailableIndex++;
     }
 
     return NextResponse.json({ success: true, word: createdWords.length === 1 ? createdWords[0] : createdWords });
