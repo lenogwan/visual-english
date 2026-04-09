@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       prisma.user.findUnique({ where: { id: userId }, select: { settings: true } }),
       prisma.practiceHistory.findMany({ 
         where: { userId, timestamp: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
-        orderBy: { timestamp: 'asc' }
+        include: { word: true } 
       }),
       prisma.userProgress.findMany({ where: { userId } }),
       prisma.word.count()
@@ -32,17 +32,8 @@ export async function GET(request: NextRequest) {
     const dailyGoal = parseInt(settings.dailyGoal || '20')
     const todayProgress = progress.filter(p => p.lastReviewedAt && p.lastReviewedAt > new Date(new Date().setHours(0,0,0,0))).length
 
-    // Generate 30-day Trend
-    const trend = Array.from({ length: 30 }).map((_, i) => {
-      const d = new Date()
-      d.setDate(d.getDate() - (29 - i))
-      const dateStr = d.toISOString().split('T')[0]
-      const dayHistory = history.filter(h => h.timestamp.toISOString().split('T')[0] === dateStr)
-      const accuracy = dayHistory.length ? Math.round((dayHistory.filter(h => h.isCorrect).length / dayHistory.length) * 100) : -1
-      return { day: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), accuracy }
-    })
-
-    const mistakeCounts = history.filter(h => !h.isCorrect).reduce((acc: any, h) => {
+    // Aggregate mistakes by Word Name
+    const mistakeCounts = history.filter(h => !h.isCorrect).reduce((acc: any, h: any) => {
         const wordText = h.word?.word || 'Unknown';
         acc[wordText] = (acc[wordText] || 0) + 1
         return acc
@@ -53,6 +44,7 @@ export async function GET(request: NextRequest) {
         .slice(0, 5)
         .map(([word, count]) => ({ word, count }))
 
+    // 記憶健康指標 (Mastery)
     const masteredCount = progress.filter(p => p.masteryLevel >= 4).length
     
     return NextResponse.json({
@@ -65,7 +57,14 @@ export async function GET(request: NextRequest) {
         dueForReview: progress.filter(p => p.nextReviewDate <= new Date()).length,
         masteryScore: totalWords ? Math.round((masteredCount / totalWords) * 100) : 0,
         refinementWords,
-        trend
+        trend: Array.from({ length: 30 }).map((_, i) => {
+          const d = new Date()
+          d.setDate(d.getDate() - (29 - i))
+          const dateStr = d.toISOString().split('T')[0]
+          const dayHistory = history.filter(h => h.timestamp.toISOString().split('T')[0] === dateStr)
+          const accuracy = dayHistory.length ? Math.round((dayHistory.filter(h => h.isCorrect).length / dayHistory.length) * 100) : -1
+          return { day: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), accuracy }
+        })
     })
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
