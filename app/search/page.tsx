@@ -55,6 +55,7 @@ function SearchContent() {
       setIsSuggestion(data.isSuggestion || false)
       
       if (data.words && data.words.length > 0) {
+        // Grouping & Prioritization Logic based on User Level
         const userSettings = (() => {
           try {
             return user?.settings ? JSON.parse(user.settings) : {}
@@ -62,6 +63,7 @@ function SearchContent() {
         })()
         const targetLevel = userSettings.englishLevel || ''
 
+        // Sort results to prioritize exact matches and level matches
         const sortedResults = [...data.words].sort((a, b) => {
           if (targetLevel) {
             if (a.level === targetLevel && b.level !== targetLevel) return -1
@@ -178,6 +180,7 @@ function SearchContent() {
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-6" id="search-page-container">
       <div className="max-w-4xl mx-auto">
+        {/* Header with Search & Results Info */}
         <div className="mb-12 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex-1 w-full">
             <form onSubmit={handleSearch} className="relative mb-2">
@@ -199,6 +202,7 @@ function SearchContent() {
                 <p className="text-sm font-black text-indigo-600 leading-none">{currentIndex + 1} / {words.length}</p>
              </div>
              
+             {/* Sense Switcher */}
              <div className="mr-2">
                 <SenseSwitcher 
                   word={currentSense.word}
@@ -215,6 +219,7 @@ function SearchContent() {
           </div>
         </div>
 
+        {/* Tab Switcher: Card vs Study */}
         <div className="flex gap-2 mb-10 bg-indigo-50/50 rounded-[2.5rem] p-2 border border-indigo-100 max-w-sm mx-auto shadow-inner">
           <button 
             onClick={() => setActiveTab('card')}
@@ -234,11 +239,12 @@ function SearchContent() {
           </button>
         </div>
 
+        {/* Dynamic Content Display */}
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           {activeTab === 'card' ? (
             <TriadCard word={currentSense} onNext={handleNext} onPrev={handlePrev} />
           ) : (
-            <div className="max-w-xl mx-auto">
+            <div className="w-full">
               <WordCard
                 wordId={currentSense.id}
                 word={currentSense.word}
@@ -251,7 +257,7 @@ function SearchContent() {
                 partOfSpeech={currentSense.partOfSpeech}
                 emotionalConnection={currentSense.emotionalConnection}
               />
-              <div className="flex justify-between mt-8 px-6">
+              <div className="flex justify-between mt-6 px-6">
                 <button onClick={handlePrev} className="px-8 py-4 bg-white/50 backdrop-blur-md text-slate-500 rounded-[2rem] font-black text-[10px] tracking-widest hover:bg-white hover:text-slate-800 transition-all border border-slate-200/50 shadow-sm uppercase flex items-center gap-2">← Prev</button>
                 <button onClick={handleNext} className="px-8 py-4 bg-indigo-600 text-white rounded-[2rem] font-black text-[10px] tracking-widest hover:bg-indigo-500 hover:shadow-2xl transition-all shadow-xl uppercase flex items-center gap-2">Next →</button>
               </div>
@@ -259,6 +265,7 @@ function SearchContent() {
           )}
         </div>
 
+        {/* Quick List Footer */}
         {words.length > 1 && (
           <div className="mt-16 bg-white/60 rounded-[2.5rem] p-10 border border-indigo-50 shadow-xl text-center">
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">
