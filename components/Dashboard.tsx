@@ -29,27 +29,18 @@ export default function Dashboard() {
 
   if (!user || loading || !stats) return <div className="min-h-screen flex items-center justify-center animate-pulse">Initializing Brain...</div>
 
+  // Calculate SVG Path for Trend
+  const points = stats.trend.map((t: any, i: number) => {
+      const x = (i / 29) * 100
+      const y = t.accuracy < 0 ? 80 : 80 - (t.accuracy * 0.8)
+      return `${x},${y}`
+  }).join(' ')
+
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-6">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl font-black mb-12">System Overview</h1>
         
-        {/* Achievements Section */}
-        <div className="mb-8 bg-white p-10 rounded-[3rem] shadow-xl border border-indigo-50">
-            <h3 className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-6">Achievement Wall</h3>
-            {stats.achievements.length > 0 ? (
-                <div className="flex flex-wrap gap-4">
-                    {stats.achievements.map((a: any) => (
-                        <div key={a.slug} className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-amber-400 to-yellow-500 text-white rounded-full font-black text-xs shadow-lg">
-                            <span>🏆</span> {a.title}
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <p className="text-slate-400 font-medium italic">Start learning to unlock your first badge!</p>
-            )}
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-indigo-50">
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Mastery Health</h3>
@@ -63,21 +54,29 @@ export default function Dashboard() {
           </div>
 
           <div className="lg:col-span-2 bg-white p-10 rounded-[3rem] shadow-xl border border-indigo-50">
-            <h3 className="text-xs font-black text-red-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" /> Refinement Zone
-            </h3>
-            {stats.refinementWords.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {stats.refinementWords.map((w: any, idx: number) => (
-                        <div key={idx} className="flex items-center justify-between p-4 bg-red-50 rounded-2xl">
-                            <span className="font-bold text-red-800 uppercase">{w.word}</span>
-                            <span className="text-xs font-black bg-red-200 px-3 py-1 rounded-full text-red-800">{w.count} mistakes</span>
-                        </div>
-                    ))}
+             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-8">30-Day Accuracy Trend (%)</h3>
+             <div className="relative w-full h-48">
+                {/* Y-axis Labels */}
+                <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-[9px] font-bold text-slate-300">
+                    <span>100%</span><span>50%</span><span>0%</span>
                 </div>
-            ) : (
-                <p className="text-slate-400 font-medium">No recent mistakes. Your memory is sharp!</p>
-            )}
+                <svg className="w-full h-full ml-8" viewBox="0 0 100 80" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="grad1" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style={{stopColor:'#6366f1', stopOpacity:0.3}} />
+                            <stop offset="100%" style={{stopColor:'#6366f1', stopOpacity:0}} />
+                        </linearGradient>
+                    </defs>
+                    <polyline fill="none" stroke="#6366f1" strokeWidth="2" points={points} />
+                    <polygon fill="url(#grad1)" points={`${points} 100,80 0,80`} />
+                </svg>
+                {/* X-axis simplified dates */}
+                <div className="flex justify-between mt-2 ml-8 text-[9px] font-bold text-slate-300">
+                    <span>{stats.trend[0].day}</span>
+                    <span>{stats.trend[15].day}</span>
+                    <span>{stats.trend[29].day}</span>
+                </div>
+             </div>
           </div>
         </div>
 
