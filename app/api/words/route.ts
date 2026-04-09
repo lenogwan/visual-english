@@ -36,43 +36,35 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
 
-    let where: any = {}
-    if (search) {
-      where.word = { contains: search, mode: 'insensitive' }
-    }
-
-    if (level && level !== 'All' && level !== 'ANY') {
-      where.level = level
-    }
-
-    if (topic && topic !== 'All' && topic !== 'ANY') {
-      where.tags = { contains: topic }
-    }
-
-    // Exclude learned words if requested
-    const excludeLearned = searchParams.get('excludeLearned') === 'true'
-    if (excludeLearned) {
-      const auth = await getAuth(request)
-      if (auth) {
-        where.progress = {
-          none: {
-            userId: auth.id,
-            learned: true,
-            masteryLevel: { gte: 5 }
-          }
-        }
-      }
-    }
-
-    let [words, total] = await Promise.all([
+    // Remove tag filtering from Prisma query to handle it manually for exact matching
+    const [allPotentialWords, totalCount] = await Promise.all([
       prisma.word.findMany({
-        where,
-        take: limit,
-        skip: offset,
+        where: search ? { word: { contains: search, mode: 'insensitive' } } : {},
         orderBy: { word: 'asc' },
       }),
-      prisma.word.count({ where }),
+      prisma.word.count({
+        where: search ? { word: { contains: search, mode: 'insensitive' } } : {},
+      }),
     ])
+
+    let words = allPotentialWords;
+    
+    // Level filtering (if provided)
+    if (level && level !== 'All' && level !== 'ANY') {
+      words = words.filter((w: any) => w.level === level)
+    }
+
+    // Exact Category filtering
+    if (topic && topic !== 'All' && topic !== 'ANY') {
+      words = words.filter((w: any) => {
+        const tags = safeJsonParse(w.tags, []);
+        return tags.includes(topic); // Exact match
+      });
+    }
+
+    // Apply pagination manually
+    const total = words.length;
+    words = words.slice(offset, offset + limit);
 
     // If search yielded no results, fetch alphabetical suggestions (A-Z)
     let isSuggestion = false;
