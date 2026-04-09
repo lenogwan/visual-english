@@ -1,8 +1,17 @@
 'use client'
 
 import Link from 'next/link'
+import { useAuth } from '@/lib/auth-context'
+import Dashboard from '@/components/Dashboard'
 
 export default function Home() {
+  const { user } = useAuth()
+
+  // If user is logged in, show the Dashboard instead of landing page
+  if (user) {
+    return <Dashboard />
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 font-[family-name:var(--font-geist-sans)]">
       
