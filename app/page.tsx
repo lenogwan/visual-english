@@ -1,12 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import Navbar from '@/components/Navbar'
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-slate-50 font-[family-name:var(--font-geist-sans)]">
-      <Navbar />
       
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-20 pb-32">
