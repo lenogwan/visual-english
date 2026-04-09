@@ -43,7 +43,7 @@ export default function PracticePage() {
     if ('speechSynthesis' in window && test?.correctAnswer) {
       const utterance = new SpeechSynthesisUtterance(test.correctAnswer)
       utterance.lang = 'en-US'
-      utterance.speak(utterance)
+      window.speechSynthesis.speak(utterance)
     }
   }
 
