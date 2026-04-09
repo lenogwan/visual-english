@@ -3,12 +3,14 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { user, logout } = useAuth()
   const userMenuRef = useRef<HTMLDivElement>(null)
+  const pathname = usePathname()
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -20,6 +22,13 @@ export default function Navbar() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  const navLinks = [
+    { name: user ? 'Dashboard' : 'Home', href: '/' },
+    { name: 'Learn', href: '/learn' },
+    { name: 'Quizzes', href: '/quiz', auth: true },
+    { name: 'Practice', href: '/practice' },
+  ]
 
   return (
     <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-indigo-100 shadow-sm">
@@ -34,36 +43,48 @@ export default function Navbar() {
             </span>
           </Link>
 
+          {/* Center Links */}
           <div className="hidden md:flex items-center gap-8">
-            <Link href="/" className="text-slate-600 hover:text-indigo-600 font-semibold transition-all hover:scale-105">
-              {user ? 'Dashboard' : 'Home'}
-            </Link>
-            <Link href="/learn" className="text-slate-600 hover:text-indigo-600 font-semibold transition-all hover:scale-105">
-              Learn
-            </Link>
+            {navLinks.map((link) => {
+              if (link.auth && !user) return null
+              const isActive = pathname === link.href
+              return (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className={`font-bold transition-all hover:scale-105 ${
+                    isActive ? 'text-indigo-600' : 'text-slate-500 hover:text-indigo-600'
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              )
+            })}
+          </div>
+          
+          <div className="flex items-center gap-4">
+            {/* Search Button moved to the right */}
             {user && (
-              <>
-                <Link href="/search" className="text-slate-600 hover:text-indigo-600 font-semibold transition-all hover:scale-105 flex items-center gap-1.5">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  Search
-                </Link>
-                <Link href="/quiz" className="text-slate-600 hover:text-indigo-600 font-semibold transition-all hover:scale-105">
-                  Quizzes
-                </Link>
-              </>
+              <Link 
+                href="/search" 
+                className={`p-2.5 rounded-xl transition-all hover:scale-110 flex items-center gap-2 group ${
+                  pathname === '/search' ? 'bg-indigo-600 text-white' : 'bg-slate-50 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600'
+                }`}
+                title="Search Words"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <span className="hidden lg:inline text-sm font-bold tracking-tight">Search</span>
+              </Link>
             )}
-            <Link href="/practice" className="text-slate-600 hover:text-indigo-600 font-semibold transition-all hover:scale-105">
-              Practice
-            </Link>
-            
-            <div className="h-6 w-px bg-slate-200 mx-2" />
+
+            <div className="hidden md:block h-6 w-px bg-slate-200 mx-2" />
 
             {user ? (
               <div className="flex items-center gap-4 relative" ref={userMenuRef}>
                 {(user.role === 'Admin' || user.role === 'admin' || user.role === 'Teacher' || user.role === 'teacher') && (
-                  <Link href="/admin" className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl font-bold hover:bg-indigo-100 transition-colors">
+                  <Link href="/admin" className="hidden lg:block px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl font-bold hover:bg-indigo-100 transition-colors">
                     Admin
                   </Link>
                 )}
@@ -72,7 +93,7 @@ export default function Navbar() {
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-50 transition-colors group"
                 >
-                  <div className="flex flex-col items-end">
+                  <div className="hidden md:flex flex-col items-end">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">
                       {user.role}
                     </span>
@@ -80,17 +101,30 @@ export default function Navbar() {
                       {user.name || user.email.split('@')[0]}
                     </span>
                   </div>
-                  <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-xs border border-indigo-200 shadow-sm group-hover:bg-indigo-200">
+                  <div className="w-9 h-9 bg-gradient-to-br from-indigo-100 to-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 font-bold text-xs border border-indigo-200 shadow-sm group-hover:bg-indigo-200 transition-all">
                     {(user.name || user.email)[0].toUpperCase()}
                   </div>
                 </button>
 
                 {userMenuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-indigo-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200 z-[60]">
+                  <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-xl border border-indigo-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200 z-[60]">
                     <div className="px-4 py-2 border-b border-slate-50 mb-1">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Signed in as</p>
                       <p className="text-xs font-semibold text-slate-600 truncate">{user.email}</p>
                     </div>
+                    {(user.role === 'Admin' || user.role === 'admin' || user.role === 'Teacher' || user.role === 'teacher') && (
+                      <Link 
+                        href="/admin" 
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex lg:hidden items-center gap-2 px-4 py-2 text-sm text-indigo-600 font-bold hover:bg-indigo-50 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Admin Panel
+                      </Link>
+                    )}
                     <Link 
                       href="/profile" 
                       onClick={() => setUserMenuOpen(false)}
@@ -124,56 +158,62 @@ export default function Navbar() {
                 Login
               </Link>
             )}
+            
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="md:hidden p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50 transition-colors text-slate-600 hover:text-indigo-600 border border-slate-100"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {menuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
           </div>
-
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden p-2 rounded-xl hover:bg-slate-100 transition-colors"
-          >
-            <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {menuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
         </div>
 
-          {menuOpen && (
-            <div className="md:hidden py-6 space-y-4 animate-fadeIn">
-              <Link href="/" className="block px-4 py-2 text-slate-700 font-bold hover:text-indigo-600">
-                {user ? 'Dashboard' : 'Home'}
-              </Link>
-              <Link href="/learn" className="block px-4 py-2 text-slate-700 font-bold hover:text-indigo-600">Learn</Link>
-              {user && (
-                <>
-                  <Link href="/search" className="block px-4 py-2 text-slate-700 font-bold hover:text-indigo-600">Search</Link>
-                  <Link href="/quiz" className="block px-4 py-2 text-slate-700 font-bold hover:text-indigo-600">Quizzes</Link>
-                </>
-              )}
-              <Link href="/practice" className="block px-4 py-2 text-slate-700 font-bold hover:text-indigo-600">Practice</Link>
-              <div className="border-t border-slate-100 pt-4 px-4">
-                {user ? (
-                  <div className="flex flex-col gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold border border-indigo-200">
-                        {(user.name || user.email)[0].toUpperCase()}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-slate-800">{user.name || user.email.split('@')[0]}</span>
-                        <span className="text-xs text-slate-500">{user.email}</span>
-                      </div>
+        {menuOpen && (
+          <div className="md:hidden py-6 space-y-4 animate-fadeIn border-t border-slate-50">
+            {navLinks.map((link) => {
+              if (link.auth && !user) return null
+              const isActive = pathname === link.href
+              return (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  onClick={() => setMenuOpen(false)}
+                  className={`block px-4 py-3 rounded-xl font-bold transition-all ${
+                    isActive ? 'bg-indigo-50 text-indigo-600' : 'text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              )
+            })}
+            
+            <div className="pt-4 px-4 border-t border-slate-50">
+              {user ? (
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 font-bold border border-indigo-200 shadow-sm">
+                      {(user.name || user.email)[0].toUpperCase()}
                     </div>
-                    <Link href="/profile" className="text-slate-600 font-bold">Profile Settings</Link>
-                    <button onClick={logout} className="text-red-500 font-bold text-left">Log out</button>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-slate-800 tracking-tight">{user.name || user.email.split('@')[0]}</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{user.role}</span>
+                    </div>
                   </div>
-                ) : (
-                  <Link href="/login" className="block py-3 text-center bg-indigo-600 text-white rounded-xl font-bold">Login</Link>
-                )}
-              </div>
+                  <Link href="/profile" onClick={() => setMenuOpen(false)} className="px-4 py-2 text-slate-600 font-bold hover:text-indigo-600">Profile Settings</Link>
+                  <button onClick={() => { setMenuOpen(false); logout(); }} className="px-4 py-2 text-red-500 font-bold text-left">Log out</button>
+                </div>
+              ) : (
+                <Link href="/login" onClick={() => setMenuOpen(false)} className="block py-4 text-center bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200">Login</Link>
+              )}
             </div>
-          )}
+          </div>
+        )}
       </div>
     </nav>
   )
