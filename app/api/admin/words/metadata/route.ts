@@ -44,7 +44,9 @@ export async function GET(request: NextRequest) {
     posResults.forEach(r => {
       const pos = r.partOfSpeech
       if (Array.isArray(pos)) {
-        pos.forEach(p => partsOfSpeechSet.add(p))
+        pos.forEach(p => {
+          if (typeof p === 'string') partsOfSpeechSet.add(p)
+        })
       } else if (typeof pos === 'string') {
         partsOfSpeechSet.add(pos)
       }
@@ -61,7 +63,7 @@ export async function GET(request: NextRequest) {
       const tags = safeJsonParse(w.tags)
       if (Array.isArray(tags)) {
         tags.forEach(t => {
-          if (t && t.length > 0) categoriesSet.add(t)
+          if (typeof t === 'string' && t.length > 0) categoriesSet.add(t)
         })
       }
     })
