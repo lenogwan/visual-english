@@ -7,7 +7,7 @@ export default function PracticePage() {
   const { token } = useAuth()
   const [test, setTest] = useState<any>(null)
   const [mode, setMode] = useState<'meaning' | 'scenario' | 'spelling' | null>(null)
-  const [result, setResult] = useState<string | null>(null)
+  const [result, setResult] = useState<'correct' | 'wrong' | null>(null)
   const [inputValue, setInputValue] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -24,10 +24,9 @@ export default function PracticePage() {
     } finally { setLoading(false) }
   }
 
-  useEffect(() => { /* initial load if needed */ }, [])
-
   const handleAnswer = async (answer: string) => {
-    const isCorrect = answer === test.correctAnswer
+    if (result) return
+    const isCorrect = answer.trim().toLowerCase() === test.correctAnswer.trim().toLowerCase()
     setResult(isCorrect ? 'correct' : 'wrong')
 
     // SRS Update: Correct=5 (Easy), Wrong=1 (Again)
@@ -36,7 +35,6 @@ export default function PracticePage() {
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ wordId: test.wordId, quality: isCorrect ? 5 : 1 })
     })
-    setTimeout(() => fetchTest(test.mode), 1500)
   }
 
   const playPronunciation = () => {
@@ -66,13 +64,26 @@ export default function PracticePage() {
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
       <div className="max-w-2xl w-full bg-white p-12 rounded-[3rem] shadow-2xl border border-indigo-50">
         <button onClick={() => setMode(null)} className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8 hover:text-indigo-600">← Change Mode</button>
-        <p className="text-xl font-bold text-slate-400 mb-4">{test?.question}</p>
+        <p className="text-xl font-bold text-slate-400 mb-8">{test?.question}</p>
         
         {mode === 'spelling' ? (
           <div className="space-y-6">
-            <button onClick={playPronunciation} className="w-full p-4 bg-indigo-50 rounded-2xl font-bold">Listen to Word</button>
-            <input type="text" value={inputValue} onChange={e => setInputValue(e.target.value)} className="w-full p-6 text-2xl font-black border-2 rounded-2xl" placeholder="Type what you hear..." />
-            <button onClick={() => handleAnswer(inputValue)} className="w-full p-6 bg-indigo-600 text-white rounded-2xl font-black">Submit</button>
+            <button onClick={playPronunciation} className="w-full p-4 bg-indigo-50 rounded-2xl font-bold text-indigo-700 hover:bg-indigo-100">Click to Hear Word</button>
+            <input 
+                type="text" 
+                value={inputValue} 
+                onChange={e => setInputValue(e.target.value)} 
+                className="w-full p-6 text-2xl font-black border-2 rounded-2xl" 
+                placeholder="Type spelling..." 
+                disabled={!!result}
+            />
+            {!result ? (
+                <button onClick={() => handleAnswer(inputValue)} className="w-full p-6 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700">Submit</button>
+            ) : (
+                <div className={`p-6 rounded-2xl font-black text-center ${result === 'correct' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    {result === 'correct' ? 'CORRECT!' : `WRONG! Answer was: ${test.correctAnswer}`}
+                </div>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4">
@@ -83,13 +94,23 @@ export default function PracticePage() {
                 disabled={!!result}
                 className={`p-6 text-lg font-bold rounded-2xl border-2 transition-all ${
                   result === 'correct' && opt === test.correctAnswer ? 'bg-green-100 border-green-500 text-green-700' :
-                  result === 'wrong' && opt !== test.correctAnswer ? 'opacity-50' : 'bg-slate-50 border-slate-100 hover:border-indigo-300'
+                  result === 'wrong' && opt !== test.correctAnswer ? 'opacity-40' : 
+                  result === 'wrong' && opt === test.correctAnswer ? 'bg-green-100 border-green-500 text-green-700' : 'bg-slate-50 border-slate-100 hover:border-indigo-300'
                 }`}
               >
                 {opt}
               </button>
             ))}
           </div>
+        )}
+
+        {result && (
+          <button 
+            onClick={() => fetchTest(mode)} 
+            className="w-full mt-8 p-4 bg-slate-900 text-white rounded-2xl font-black hover:bg-slate-800 transition-all"
+          >
+            Next Word →
+          </button>
         )}
       </div>
     </div>
