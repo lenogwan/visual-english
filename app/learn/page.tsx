@@ -36,14 +36,12 @@ function LearnContent() {
   const mode = searchParams.get('mode')
   const isFavoritesMode = mode === 'favorites'
 
-  // Reset tab if in favorites mode and currently on a hidden tab
   useEffect(() => {
     if (isFavoritesMode && (activeTab === 'images')) {
       setActiveTab('card')
     }
   }, [isFavoritesMode, activeTab])
 
-  // Parse user settings
   const userSettings = (() => {
     try { return user?.settings ? JSON.parse(user.settings) : {} } catch { return {} }
   })()
@@ -86,31 +84,6 @@ function LearnContent() {
   }
 
   useEffect(() => { fetchWords() }, [user])
-
-  // Track progress when word changes
-  useEffect(() => {
-    if (!token || !words[currentIndex]) return
-
-    const trackProgress = async () => {
-      try {
-        await fetch('/api/progress', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            wordId: words[currentIndex].id,
-            learned: true
-          })
-        })
-      } catch (err) {
-        console.error('Failed to track progress:', err)
-      }
-    }
-
-    trackProgress()
-  }, [currentIndex, words, token])
 
   useEffect(() => {
     if (words[currentIndex]) {
