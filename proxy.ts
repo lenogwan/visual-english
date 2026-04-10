@@ -36,7 +36,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const publicApiPaths = ['/api/words', '/api/ai']
+  const publicApiPaths = ['/api/words', '/api/ai', '/api/practice']
   const isPublicApi = publicApiPaths.some(path => pathname.startsWith(path))
   
   if (isPublicApi) {
