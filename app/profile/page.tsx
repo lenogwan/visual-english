@@ -12,7 +12,7 @@ export default function ProfilePage() {
   
   // Settings state
   const [englishLevel, setEnglishLevel] = useState('B1')
-  const [dailyGoal, setDailyGoal] = useState('20')
+  const [dailyGoal, setDailyGoal] = useState<number>(20)
   const [nativeLanguage, setNativeLanguage] = useState('Traditional Chinese')
 
   // Password state
