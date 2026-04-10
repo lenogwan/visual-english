@@ -7,8 +7,22 @@ import UnsplashImage from '@/components/UnsplashImage'
 import SenseSwitcher from '@/components/SenseSwitcher'
 
 interface TriadCardProps {
-  word: WordData
-  onNext?: () => void
+  word: WordData | {
+    id: string
+    word: string
+    phonetic?: string | null
+    partOfSpeech?: string | string[]
+    meaning?: string | null
+    examples?: string[]
+    images: string[]
+    scenario?: string | null
+    scenarioImages?: string[]
+    exampleSentence?: string | null
+    emotionalConnection?: string | null
+    tags?: string[]
+    level?: string
+  }
+  onNext?: (quality: number) => void | Promise<void>
   onPrev?: () => void
 }
 

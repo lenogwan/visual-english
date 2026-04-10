@@ -1,6 +1,6 @@
 'use client'
 
-import { calculateSRS, SRSState } from '@/lib/srs'
+import { calculateSRS, SRSQuality, SRSState } from '@/lib/srs'
 
 interface SRSControllerProps {
   wordId: string;
@@ -11,12 +11,12 @@ interface SRSControllerProps {
 export default function SRSController({ wordId, currentState, onGrade }: SRSControllerProps) {
   // Use a default state if none provided to calculate intervals
   const baseState = currentState || { interval: 0, easeFactor: 2.5, masteryLevel: 0, timesReviewed: 0 };
-  
+
   const grades = [
-    { label: 'Again', val: 1, color: 'bg-red-500', hoverColor: 'hover:bg-red-600', textColor: 'text-red-600', bgColor: 'bg-red-50', icon: '🔄' },
-    { label: 'Hard', val: 3, color: 'bg-orange-500', hoverColor: 'hover:bg-orange-600', textColor: 'text-orange-600', bgColor: 'bg-orange-50', icon: '😓' },
-    { label: 'Good', val: 4, color: 'bg-indigo-500', hoverColor: 'hover:bg-indigo-600', textColor: 'text-indigo-600', bgColor: 'bg-indigo-50', icon: '👍' },
-    { label: 'Easy', val: 5, color: 'bg-emerald-500', hoverColor: 'hover:bg-emerald-600', textColor: 'text-emerald-600', bgColor: 'bg-emerald-50', icon: '✨' }
+    { label: 'Again', val: 1 as SRSQuality, color: 'bg-red-500', hoverColor: 'hover:bg-red-600', textColor: 'text-red-600', bgColor: 'bg-red-50', icon: '🔄' },
+    { label: 'Hard', val: 3 as SRSQuality, color: 'bg-orange-500', hoverColor: 'hover:bg-orange-600', textColor: 'text-orange-600', bgColor: 'bg-orange-50', icon: '😓' },
+    { label: 'Good', val: 4 as SRSQuality, color: 'bg-indigo-500', hoverColor: 'hover:bg-indigo-600', textColor: 'text-indigo-600', bgColor: 'bg-indigo-50', icon: '👍' },
+    { label: 'Easy', val: 5 as SRSQuality, color: 'bg-emerald-500', hoverColor: 'hover:bg-emerald-600', textColor: 'text-emerald-600', bgColor: 'bg-emerald-50', icon: '✨' }
   ];
 
   const formatInterval = (days: number) => {
