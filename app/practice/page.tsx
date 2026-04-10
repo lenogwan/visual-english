@@ -7,8 +7,12 @@ export default function PracticePage() {
   const { token } = useAuth()
   const [test, setTest] = useState<any>(null)
   const [sessionCount, setSessionCount] = useState(0)
-  const MAX_SESSION = 10
   const [sessionScore, setSessionScore] = useState(0)
+  const [mode, setMode] = useState<'meaning' | 'scenario' | 'spelling' | null>(null)
+  const [result, setResult] = useState<'correct' | 'wrong' | null>(null)
+  const [inputValue, setInputValue] = useState('')
+  const [loading, setLoading] = useState(false)
+  const MAX_SESSION = 10
 
   async function fetchTest(selectedMode: string) {
     if (!token) return
@@ -16,8 +20,6 @@ export default function PracticePage() {
     setMode(selectedMode as any)
     setSessionCount(0)
     setSessionScore(0)
-    
-    // Fetch initial question
     await loadNextQuestion(selectedMode)
     setLoading(false)
   }
@@ -37,7 +39,6 @@ export default function PracticePage() {
     if (isCorrect) setSessionScore(s => s + 1)
     setSessionCount(c => c + 1)
 
-    // SRS Update
     await fetch('/api/progress', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -45,8 +46,12 @@ export default function PracticePage() {
     })
   }
 
-  const finishSession = () => {
-      setMode(null)
+  const playPronunciation = () => {
+    if ('speechSynthesis' in window && test?.correctAnswer) {
+      const utterance = new SpeechSynthesisUtterance(test.correctAnswer)
+      utterance.lang = 'en-US'
+      window.speechSynthesis.speak(utterance)
+    }
   }
 
   if (!mode) return (
@@ -72,7 +77,7 @@ export default function PracticePage() {
             <div className="text-8xl mb-8">🎖️</div>
             <h2 className="text-4xl font-black text-slate-900 mb-2">Session Complete!</h2>
             <p className="text-slate-500 font-bold text-sm uppercase tracking-widest mb-10">Accuracy: {Math.round((sessionScore / MAX_SESSION) * 100)}%</p>
-            <button onClick={finishSession} className="w-full p-6 bg-slate-900 text-white rounded-2xl font-black hover:bg-indigo-600 transition-all">Back to Arena</button>
+            <button onClick={() => setMode(null)} className="w-full p-6 bg-slate-900 text-white rounded-2xl font-black hover:bg-indigo-600 transition-all">Back to Arena</button>
         </div>
       </div>
   )
@@ -131,7 +136,7 @@ export default function PracticePage() {
 
         {result && (
           <button 
-            onClick={() => loadNextQuestion(mode)} 
+            onClick={() => loadNextQuestion(mode!)} 
             className="w-full mt-8 p-4 bg-slate-900 text-white rounded-2xl font-black hover:bg-slate-800 transition-all active:scale-[0.98]"
           >
             Next Word →
@@ -140,4 +145,4 @@ export default function PracticePage() {
       </div>
     </div>
   )
-
+}
