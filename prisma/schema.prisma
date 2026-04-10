@@ -15,6 +15,13 @@ model User {
   name            String?
   role            String            @default("User")
   settings        String            @default("{}")
+  
+  // Gamification Fields
+  xp              Int               @default(0)
+  streakCount     Int               @default(0)
+  streakFreezes   Int               @default(1)
+  lastActiveDate  DateTime?
+  
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   favoriteWords   FavoriteWord[]
@@ -22,6 +29,8 @@ model User {
   quizAttempts    QuizAttempt[]
   progress        UserProgress[]
   practiceHistory PracticeHistory[]
+  dailySessions   DailySession[]
+  learningEvents  LearningEvent[]
 }
 
 model Word {
@@ -45,6 +54,7 @@ model Word {
   favorites           FavoriteWord[]
   progress            UserProgress[]
   practiceHistory     PracticeHistory[]
+  learningEvents      LearningEvent[]
 
   @@unique([word, senseIndex])
   @@index([level])
@@ -124,4 +134,47 @@ model QuizAttempt {
 
   @@index([userId])
   @@index([quizId])
+}
+
+// Phase 1: Unified Session Tracking
+model DailySession {
+  id              String    @id @default(cuid())
+  userId          String
+  date            DateTime  @default(now()) // Stores date at midnight
+  learnCount      Int       @default(0)
+  practiceCount   Int       @default(0)
+  learnCorrect    Int       @default(0)
+  practiceCorrect Int       @default(0)
+  xpEarned        Int       @default(0)
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events          LearningEvent[]
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+// Phase 1: Unified Event Log
+model LearningEvent {
+  id              String    @id @default(cuid())
+  userId          String
+  wordId          String
+  eventType       String    // "LEARN_GRADE" | "PRACTICE_ANSWER"
+  mode            String?   // "meaning" | "scenario" | "spelling" (Practice only)
+  quality         Int       // 1-5 (Learn grade or mapped Practice quality)
+  isCorrect       Boolean   // Derived
+  responseTimeMs  Int?      // Practice only
+  sessionId       String
+  createdAt       DateTime  @default(now())
+  
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  word            Word            @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  session         DailySession    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, sessionId])
+  @@index([userId, eventType, createdAt])
+  @@index([userId, wordId, createdAt])
 }
