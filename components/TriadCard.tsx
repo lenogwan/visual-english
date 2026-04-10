@@ -36,6 +36,12 @@ export default function TriadCard({ word: initialWord, onNext, onPrev }: TriadCa
   const [favLoading, setFavLoading] = useState(false)
   const { isFavorited, refresh: refreshFavorites } = useFavorites()
 
+  useEffect(() => {
+    setCurrentSense(initialWord)
+    setFlipped(false)
+    setExampleIndex(0)
+  }, [initialWord?.id])
+
   function safeJsonParse(data: any, fallback: any = []) {
     if (typeof data !== 'string') return data || fallback
     try { return JSON.parse(data) } catch (e) { return fallback }
