@@ -1,8 +1,12 @@
 'use client'
 
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { useAuth } from '@/lib/auth-context'
-import Dashboard from '@/components/Dashboard'
+
+const Dashboard = dynamic(() => import('@/components/Dashboard'), {
+  loading: () => <div className="min-h-screen flex items-center justify-center"><div className="w-16 h-16 border-4 border-indigo-400/20 border-t-indigo-600 rounded-full animate-spin"></div></div>
+})
 
 export default function Home() {
   const { user } = useAuth()

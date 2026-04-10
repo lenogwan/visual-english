@@ -18,48 +18,48 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || ''
     const level = searchParams.get('level') || ''
     const topic = searchParams.get('topic') || ''
-    const limit = parseInt(searchParams.get('limit') || '50')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100)
     const offset = parseInt(searchParams.get('offset') || '0')
 
-    const [allPotentialWords, totalCount] = await Promise.all([
+    const where: any = {}
+    if (search) where.word = { contains: search, mode: 'insensitive' }
+    if (level && level !== 'All' && level !== 'ANY') where.level = level
+
+    // If topic filtering is needed, we do it post-query since tags are JSON
+    // For now, we rely on DB filtering for level and search
+    const [words, totalCount] = await Promise.all([
       prisma.word.findMany({
-        where: search ? { word: { contains: search, mode: 'insensitive' } } : {},
+        where,
         orderBy: { word: 'asc' },
+        skip: offset,
+        take: limit,
       }),
-      prisma.word.count({
-        where: search ? { word: { contains: search, mode: 'insensitive' } } : {},
-      }),
+      prisma.word.count({ where }),
     ])
 
-    let words = allPotentialWords;
-    
-    if (level && level !== 'All' && level !== 'ANY') {
-      words = words.filter((w: any) => w.level === level)
-    }
-
+    let filteredWords = words;
     if (topic && topic !== 'All' && topic !== 'ANY') {
-      words = words.filter((w: any) => {
+      filteredWords = words.filter((w: any) => {
         const tags = safeJsonParse(w.tags, []);
         return tags.includes(topic);
       });
     }
 
-    let total = words.length;
-    words = words.slice(offset, offset + limit);
-
+    let total = topic ? filteredWords.length : totalCount;
     let isSuggestion = false;
-    if (words.length === 0 && search) {
-      words = await prisma.word.findMany({
+    if (filteredWords.length === 0 && search) {
+      const suggestionWords = await prisma.word.findMany({
         take: limit,
         orderBy: { word: 'asc' },
       });
+      filteredWords = suggestionWords;
       total = await prisma.word.count();
       isSuggestion = true;
     }
 
     if (search && !isSuggestion) {
       const lowerSearch = search.toLowerCase();
-      words.sort((a, b) => {
+      filteredWords.sort((a, b) => {
         const aWord = a.word.toLowerCase();
         const bWord = b.word.toLowerCase();
         const aExact = aWord === lowerSearch;
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      words: words.map((w: any) => {
+      words: filteredWords.map((w: any) => {
         let displayPos = 'word';
         const pos = w.partOfSpeech;
         if (Array.isArray(pos)) {
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
           const parsed = safeJsonParse(pos, [pos]);
           displayPos = Array.isArray(parsed) ? (parsed[0] || 'word') : (parsed || 'word');
         }
-        
+
         return {
           ...w,
           partOfSpeech: displayPos,

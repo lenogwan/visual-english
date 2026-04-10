@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import SessionExpiredToast from "@/components/SessionExpiredToast";
 import { AuthProvider } from "@/lib/auth-context";
+import { FavoritesProvider } from "@/lib/favorites-context";
 import OnboardingWrapper from "@/components/OnboardingWrapper";
 
 const geistSans = Geist({
@@ -68,11 +69,13 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <AuthProvider>
-          <Navbar />
-          <SessionExpiredToast />
-          <OnboardingWrapper>
-            <main className="flex-1">{children}</main>
-          </OnboardingWrapper>
+          <FavoritesProvider>
+            <Navbar />
+            <SessionExpiredToast />
+            <OnboardingWrapper>
+              <main className="flex-1">{children}</main>
+            </OnboardingWrapper>
+          </FavoritesProvider>
         </AuthProvider>
       </body>
     </html>

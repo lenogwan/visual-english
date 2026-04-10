@@ -5,8 +5,27 @@ import { getUserId } from '@/lib/auth-utils'
 export async function GET(request: NextRequest) {
   const userId = await getUserId(request)
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const favorites = await prisma.favoriteWord.findMany({ where: { userId }, include: { word: true } })
-  return NextResponse.json({ favorites: favorites.map(f => f.word) })
+  
+  const { searchParams } = new URL(request.url)
+  const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100)
+  const offset = parseInt(searchParams.get('offset') || '0')
+
+  const [favorites, totalCount] = await Promise.all([
+    prisma.favoriteWord.findMany({
+      where: { userId },
+      include: { word: true },
+      skip: offset,
+      take: limit
+    }),
+    prisma.favoriteWord.count({ where: { userId } })
+  ])
+  
+  return NextResponse.json({
+    favorites: favorites.map(f => f.word),
+    total: totalCount,
+    limit,
+    offset
+  })
 }
 
 export async function POST(request: NextRequest) {

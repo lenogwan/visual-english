@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { WordData } from '@/lib/data'
 import { useAuth } from '@/lib/auth-context'
+import { useFavorites } from '@/lib/favorites-context'
 import UnsplashImage from '@/components/UnsplashImage'
 import SenseSwitcher from '@/components/SenseSwitcher'
 
@@ -32,25 +33,8 @@ export default function TriadCard({ word: initialWord, onNext, onPrev }: TriadCa
   const [currentSense, setCurrentSense] = useState<any>(initialWord)
   const [flipped, setFlipped] = useState(false)
   const [exampleIndex, setExampleIndex] = useState(0)
-  const [isFavorited, setIsFavorited] = useState(false)
   const [favLoading, setFavLoading] = useState(false)
-
-  useEffect(() => {
-    setCurrentSense(initialWord)
-    setFlipped(false)
-    setExampleIndex(0)
-  }, [initialWord])
-
-  useEffect(() => {
-    if (!user || !token || !currentSense.id) return
-    fetch('/api/favorites', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json())
-      .then(data => {
-        const favIds = (data.favorites || []).map((f: any) => f.wordId)
-        setIsFavorited(favIds.includes(currentSense.id))
-      })
-      .catch(() => {})
-  }, [user, token, currentSense.id])
+  const { isFavorited, refresh: refreshFavorites } = useFavorites()
 
   function safeJsonParse(data: any, fallback: any = []) {
     if (typeof data !== 'string') return data || fallback
@@ -61,18 +45,18 @@ export default function TriadCard({ word: initialWord, onNext, onPrev }: TriadCa
     e.stopPropagation()
     if (!user || !token || !currentSense.id || favLoading) return
     setFavLoading(true)
-    const prev = isFavorited
-    setIsFavorited(!prev)
+    const prev = isFavorited(currentSense.id)
     try {
       const res = await fetch('/api/favorites', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ wordId: currentSense.id }),
       })
-      const data = await res.json()
-      setIsFavorited(data.favorited)
+      await res.json()
+      await refreshFavorites()
     } catch {
-      setIsFavorited(prev)
+      // Refresh to ensure state is accurate
+      await refreshFavorites()
     } finally {
       setFavLoading(false)
     }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
+import { useFavorites } from '@/lib/favorites-context'
 import UnsplashImage from '@/components/UnsplashImage'
 
 interface WordCardProps {
@@ -19,15 +20,9 @@ interface WordCardProps {
 
 export default function WordCard({ id, word, phonetic, meaning, scenario, examples = [], images = [], tags = [], partOfSpeech, emotionalConnection }: WordCardProps) {
   const { token } = useAuth()
-  const [isFav, setIsFav] = useState(false)
+  const { isFavorited, refresh: refreshFavorites } = useFavorites()
   const [exampleIndex, setExampleIndex] = useState(0)
-
-  useEffect(() => {
-    if(!token || !id) return
-    fetch('/api/favorites', { headers: { 'Authorization': `Bearer ${token}` } })
-      .then(r => r.json())
-      .then(data => setIsFav(data.favorites.some((w: any) => w.id === id)))
-  }, [token, id])
+  const isFav = isFavorited(id)
 
   const toggleFav = async () => {
     if(!id) return
@@ -36,7 +31,7 @@ export default function WordCard({ id, word, phonetic, meaning, scenario, exampl
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ wordId: id })
     })
-    if(res.ok) setIsFav(!isFav)
+    if(res.ok) await refreshFavorites()
   }
 
   const playSound = (text: string) => {

@@ -7,6 +7,7 @@ import TriadCard from '@/components/TriadCard'
 import WordCard from '@/components/WordCard'
 import SenseSwitcher from '@/components/SenseSwitcher'
 import Link from 'next/link'
+import { useDebounce } from '@/hooks/use-debounce'
 
 interface Word {
   id: string
@@ -34,7 +35,9 @@ function SearchContent() {
   const [isSuggestion, setIsSuggestion] = useState(false)
   const [currentSense, setCurrentSense] = useState<Word | null>(null)
   const [error, setError] = useState<string | null>(null)
-  
+
+  const debouncedQuery = useDebounce(searchQuery, 300)
+
   const searchParams = useSearchParams()
   const router = useRouter()
   const { user } = useAuth()
@@ -100,6 +103,12 @@ function SearchContent() {
       setLoading(false)
     }
   }, [user])
+
+  useEffect(() => {
+    if (debouncedQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(debouncedQuery.trim())}`)
+    }
+  }, [debouncedQuery, router])
 
   useEffect(() => {
     const query = searchParams.get('q')
