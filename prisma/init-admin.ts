@@ -7,7 +7,7 @@ async function main() {
   
   console.log(`--- Initializing Admin User ---`)
   console.log(`Target Email: ${email}`)
-  console.log(`Database Mode: ${process.env.NODE_ENV === 'production' ? 'TURSO (Production)' : 'SQLite (Local)'}`)
+  console.log(`Database Mode: ${process.env.NODE_ENV === 'production' ? 'PostgreSQL (Production)' : 'PostgreSQL (Local)'}`)
 
   const hashedPassword = await hash(password, 10)
 
