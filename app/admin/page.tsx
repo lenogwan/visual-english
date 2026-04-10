@@ -210,9 +210,13 @@ export default function AdminPage() {
   useEffect(() => {
     if (loading) return
 
+    console.log('User role:', user?.role)
+    console.log('Is Staff:', isStaff)
+
     if (!user) {
       router.push('/login')
     } else if (!isStaff) {
+      console.log('Access denied, redirecting to home')
       router.push('/')
     }
   }, [user, loading, router, isStaff])
