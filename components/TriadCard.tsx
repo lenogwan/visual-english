@@ -107,17 +107,17 @@ export default function TriadCard({ word: initialWord, onNext, onPrev }: TriadCa
   return (
     <div className="max-w-xl mx-auto">
       <div
-        className="relative cursor-pointer perspective-1000 h-[680px]"
+        className="relative cursor-pointer perspective-1000 min-h-[680px]"
         onClick={() => setFlipped(!flipped)}
       >
         <div
-          className={`transition-transform duration-500 transform-style-3d h-full ${
+          className={`transition-transform duration-500 transform-style-3d w-full ${
             flipped ? 'rotate-y-180' : ''
           }`}
         >
           {/* Front */}
-          <div className="backface-hidden absolute inset-0">
-            <div className="bg-white rounded-[3.5rem] shadow-2xl overflow-hidden h-full border border-indigo-50 flex flex-col">
+          <div className="backface-hidden absolute inset-0 w-full">
+            <div className="bg-white rounded-[3.5rem] shadow-2xl overflow-visible border border-indigo-50 flex flex-col min-h-[680px]">
               <div className="p-6 pb-2 flex gap-3 items-center justify-center">
                 {category && (
                   <span className="px-4 py-1 bg-slate-100 text-slate-500 rounded-full text-[10px] font-black tracking-widest border border-slate-200/50">
@@ -159,8 +159,8 @@ export default function TriadCard({ word: initialWord, onNext, onPrev }: TriadCa
           </div>
 
           {/* Back */}
-          <div className="backface-hidden rotate-y-180 absolute inset-0">
-             <div className="bg-white rounded-[3.5rem] shadow-2xl overflow-hidden h-full border border-indigo-50 flex flex-col p-10">
+          <div className="backface-hidden rotate-y-180 absolute inset-0 w-full">
+             <div className="bg-white rounded-[3.5rem] shadow-2xl overflow-visible border border-indigo-50 flex flex-col min-h-[680px] p-10">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">CONTEXTUAL SCENARIO</h2>
                   <button onClick={playFeelIt} className="p-2.5 bg-indigo-50 text-indigo-400 rounded-full hover:text-indigo-600 transition-all border border-indigo-100/30 shadow-sm"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217z" /></svg></button>
