@@ -18,24 +18,23 @@ export async function GET(request: NextRequest) {
     const userId = await getUserId(request)
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const [stats, history, progress, totalWords] = await Promise.all([
+    const [stats, history, learnedCount, masteredCount, totalWords] = await Promise.all([
       prisma.user.findUnique({ where: { id: userId }, select: { settings: true } }),
       prisma.practiceHistory.findMany({ 
         where: { userId, timestamp: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
-        include: { word: true } 
+        include: { word: { select: { word: true } } } 
       }),
-      prisma.userProgress.findMany({ where: { userId } }),
+      prisma.userProgress.count({ where: { userId, learned: true } }),
+      prisma.userProgress.count({ where: { userId, masteryLevel: { gte: 4 } } }),
       prisma.word.count()
     ])
 
     const settings = stats?.settings ? JSON.parse(stats.settings) : {}
     const dailyGoal = parseInt(settings.dailyGoal || '20')
-    const learnedWords = progress.filter(p => p.learned)
-    const masteredCount = progress.filter(p => p.masteryLevel >= 4).length
     
     // Logic: calculate achievements on the fly
     const calculatedAchievements = []
-    if (learnedWords.length >= 50) calculatedAchievements.push({ slug: 'pioneer', title: 'Learning Pioneer' })
+    if (learnedCount >= 50) calculatedAchievements.push({ slug: 'pioneer', title: 'Learning Pioneer' })
     if (masteredCount >= 50) calculatedAchievements.push({ slug: 'master-50', title: 'Master 50' })
     if (history.length >= 100) calculatedAchievements.push({ slug: 'practitioner', title: 'Active Practitioner' })
 
@@ -52,7 +51,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
         dailyGoal,
-        totalLearned: learnedWords.length,
+        totalLearned: learnedCount,
         totalWords,
         accuracy: history.length ? Math.round((history.filter(h => h.isCorrect).length / history.length) * 100) : 100,
         masteryScore: totalWords ? Math.round((masteredCount / totalWords) * 100) : 0,

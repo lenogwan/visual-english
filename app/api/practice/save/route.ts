@@ -43,6 +43,8 @@ export async function POST(request: NextRequest) {
                 description: 'Auto-generated practice session record',
                 type: 'practice',
                 wordIds: '[]',
+                entryPassword: 'PRACTICE-' + Math.random().toString(36).substring(2, 7).toUpperCase(),
+                isActive: false, // Internal quiz, not joinable via code
                 createdById: admin?.id || userId // Fallback to current user if no admin found
             }
         })
