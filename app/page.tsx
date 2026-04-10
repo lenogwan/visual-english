@@ -1,18 +1,26 @@
 'use client'
 
 import Link from 'next/link'
-import dynamic from 'next/dynamic'
 import { useAuth } from '@/lib/auth-context'
-
-const Dashboard = dynamic(() => import('@/components/Dashboard'), {
-  loading: () => <div className="min-h-screen flex items-center justify-center"><div className="w-16 h-16 border-4 border-indigo-400/20 border-t-indigo-600 rounded-full animate-spin"></div></div>
-})
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function Home() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
+  const router = useRouter()
 
-  if (user) {
-    return <Dashboard />
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace('/session')
+    }
+  }, [user, loading, router])
+
+  if (loading || user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="w-16 h-16 border-4 border-indigo-400/20 border-t-indigo-600 rounded-full animate-spin"></div>
+      </div>
+    )
   }
 
   return (

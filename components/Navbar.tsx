@@ -25,8 +25,8 @@ export default function Navbar() {
   }, [])
 
   const navLinks = [
-    { name: user ? 'Dashboard' : 'Home', href: '/' },
-    { name: 'Learn', href: '/learn' },
+    { name: 'Session', href: '/session' },
+    { name: 'Library', href: '/library' },
     { name: 'Quizzes', href: '/quiz', auth: true },
     { name: 'Practice', href: '/practice' },
   ]
