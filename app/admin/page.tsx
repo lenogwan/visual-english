@@ -994,7 +994,12 @@ export default function AdminPage() {
                       <div className="flex items-center gap-2">
                         <span
                           role="button"
-                          onClick={(e) => { e.stopPropagation(); if (confirm(`Delete "${word.word}"?`)) { deleteWord(); selectWord(word) } }}
+                          onClick={(e) => {
+                  e.stopPropagation()
+                  if (confirm(`Delete "${word.word}"?`)) {
+                    deleteWord()
+                  }
+                }}
                           className={`opacity-0 group-hover:opacity-100 p-1.5 rounded-lg transition-all hover:bg-red-100 ${selectedWord?.id === word.id ? 'text-red-200 hover:text-red-100' : 'text-red-400 hover:text-red-600'}`}
                           title="Delete word"
                         >

@@ -4,29 +4,65 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import Link from 'next/link'
 
+interface Word {
+  id: string
+  word: string
+  tags: string[]
+  masteryLevel?: number
+}
+
 export default function LibraryPage() {
   const { token } = useAuth()
-  const [words, setWords] = useState<any[]>([])
+  const [words, setWords] = useState<Word[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!token) return
     fetch('/api/words/learned', { headers: { 'Authorization': `Bearer ${token}` } })
-      .then(r => r.json())
-      .then(data => setWords(data.words || []))
-      .catch(console.error)
+      .then(r => {
+        if (!r.ok) throw new Error('Failed to fetch words')
+        return r.json()
+      })
+      .then(data => {
+        setWords(data.words || [])
+        setError(null)
+      })
+      .catch(err => {
+        console.error('Failed to fetch words:', err)
+        setError('Failed to load your word library. Please try again.')
+        setWords([])
+      })
       .finally(() => setLoading(false))
   }, [token])
 
   const filteredWords = useMemo(() => {
-    return words.filter(w => 
-      w.word.toLowerCase().includes(search.toLowerCase()) || 
-      w.tags.some((t: string) => t.toLowerCase().includes(search.toLowerCase()))
-    ).sort((a: any, b: any) => a.word.localeCompare(b.word))
+    return words.filter(w =>
+      w.word.toLowerCase().includes(search.toLowerCase()) ||
+      (Array.isArray(w.tags) && w.tags.some((t: string) => t.toLowerCase().includes(search.toLowerCase())))
+    ).sort((a, b) => a.word.localeCompare(b.word))
   }, [words, search])
 
   if (loading) return <div className="min-h-screen flex items-center justify-center font-black">Indexing Knowledge...</div>
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <div className="bg-white p-12 rounded-3xl shadow-lg text-center max-w-md">
+          <div className="text-4xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-black text-slate-900 mb-2">Loading Failed</h2>
+          <p className="text-slate-500 mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-black hover:bg-indigo-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-6">

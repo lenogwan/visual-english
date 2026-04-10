@@ -1,7 +1,7 @@
 export interface WordData {
   id?: string
   word: string
-  partOfSpeech?: string
+  partOfSpeech?: string[]
   senseIndex?: number
   phonetic?: string | null
   meaning?: string | null
@@ -13,12 +13,16 @@ export interface WordData {
   exampleSentence?: string | null
   emotionalConnection?: string | null
   tags: string[]
+  level?: string
 }
 
 export const sampleWords: WordData[] = [
   {
     word: 'apple',
+    partOfSpeech: ['noun'],
+    level: 'A1',
     phonetic: '/ˈæp.əl/',
+    meaning: 'A round fruit with red, green, or yellow skin and a crisp texture',
     images: [
       'https://images.unsplash.com/photo-1568702846914-96b305d3aa87?w=400&h=300&fit=crop',
       'https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?w=400&h=300&fit=crop',
@@ -35,7 +39,10 @@ export const sampleWords: WordData[] = [
   },
   {
     word: 'pretend',
+    partOfSpeech: ['verb'],
+    level: 'A2',
     phonetic: '/prɪˈtend/',
+    meaning: 'To act as if something is true when it is not, especially to make someone believe something that is not real',
     images: [
       'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=400&h=300&fit=crop',
       'https://images.unsplash.com/photo-1587654780291-39c9404d7dd0?w=400&h=300&fit=crop',
@@ -52,7 +59,10 @@ export const sampleWords: WordData[] = [
   },
   {
     word: 'whisper',
+    partOfSpeech: ['verb'],
+    level: 'B1',
     phonetic: '/ˈwɪs.pər/',
+    meaning: 'To speak very quietly using breath rather than the throat',
     images: [
       'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=300&fit=crop',
       'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=400&h=300&fit=crop',
@@ -68,7 +78,10 @@ export const sampleWords: WordData[] = [
   },
   {
     word: 'thunderstorm',
+    partOfSpeech: ['noun'],
+    level: 'B1',
     phonetic: '/ˈθʌn.dɚ.stɔːrm/',
+    meaning: 'A storm with thunder and heavy rain, often with lightning and strong winds',
     images: [
       'https://images.unsplash.com/photo-1605727216801-e27ce1d0cc28?w=400&h=300&fit=crop',
       'https://images.unsplash.com/photo-1461511669078-d46bf351cd6e?w=400&h=300&fit=crop',
@@ -85,7 +98,10 @@ export const sampleWords: WordData[] = [
   },
   {
     word: 'sprint',
+    partOfSpeech: ['verb'],
+    level: 'B2',
     phonetic: '/sprɪnt/',
+    meaning: 'To run at full speed for a short distance',
     images: [
       'https://images.unsplash.com/photo-1532444458054-01a7dd3e9fca?w=400&h=300&fit=crop',
       'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=400&h=300&fit=crop',

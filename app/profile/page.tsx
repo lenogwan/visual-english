@@ -100,6 +100,11 @@ export default function ProfilePage() {
     e.preventDefault()
     setPasswordMessage({ text: '', type: '' })
 
+    if (!currentPassword) {
+      setPasswordMessage({ text: 'Please enter your current password.', type: 'error' })
+      return
+    }
+
     if (newPassword !== confirmPassword) {
       setPasswordMessage({ text: 'New passwords do not match.', type: 'error' })
       return

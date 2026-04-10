@@ -55,12 +55,12 @@ function LearnContent() {
             <p className="mt-4 text-slate-400 font-bold">Word {currentIndex + 1} of {queue.length}</p>
         </div>
         
-        <TriadCard 
-           word={queue[currentIndex]} 
-           onNext={() => setCurrentIndex(p => p + 1)}
+        <TriadCard
+           word={queue[currentIndex]}
+           onNext={handleGrade}
         />
-        
-        <SRSController 
+
+        <SRSController
            wordId={queue[currentIndex].id}
            currentState={queue[currentIndex].progress ? {
              interval: queue[currentIndex].progress.interval,
@@ -68,7 +68,7 @@ function LearnContent() {
              masteryLevel: queue[currentIndex].progress.masteryLevel,
              timesReviewed: queue[currentIndex].progress.timesReviewed
            } : undefined}
-           onGrade={handleGrade} 
+           onGrade={handleGrade}
         />
       </div>
     </div>

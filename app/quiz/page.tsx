@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
+import { hasRole } from '@/lib/auth-utils'
 
 interface Word {
   id: string
@@ -87,7 +88,7 @@ export default function QuizListPage() {
     }
   }
 
-  const canCreate = user && (user.role === 'Admin' || user.role === 'Teacher' || user.role === 'admin' || user.role === 'teacher')
+  const canCreate = hasRole(user, ['admin', 'teacher'])
 
   if (loading) {
     return (

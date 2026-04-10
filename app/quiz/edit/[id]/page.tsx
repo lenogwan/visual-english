@@ -32,23 +32,26 @@ export default function EditQuizPage() {
   }, [id, token, router])
 
   const handleSave = async () => {
+    if (!token || !id) return
     setSaving(true)
     try {
       const res = await fetch(`/api/quiz/${id}`, {
         method: 'PUT',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ title, description })
       })
       if (res.ok) {
         router.push(`/quiz/${id}`)
       } else {
-        alert('Failed to update quiz')
+        const data = await res.json()
+        alert(data.error || 'Failed to update quiz')
       }
     } catch (err) {
       console.error(err)
+      alert('An error occurred while saving')
     } finally {
       setSaving(false)
     }

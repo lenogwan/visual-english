@@ -17,7 +17,7 @@ export interface SRSResult extends SRSState {
 }
 
 export function calculateSRS(
-  quality: number, // 1-5 scale
+  quality: SRSQuality,
   current: SRSState = { interval: 0, easeFactor: 2.5, masteryLevel: 0, timesReviewed: 0 }
 ): SRSResult {
   let { interval, easeFactor, masteryLevel, timesReviewed } = current;
@@ -55,8 +55,8 @@ export function calculateSRS(
       easeFactor = Math.max(1.3, easeFactor);
     }
     
-    // Increment mastery on correct answers
-    masteryLevel = Math.min(5, masteryLevel + (quality >= 4 ? 1 : 0));
+    // Increment mastery on correct answers (quality 3=Hard gets slower progress)
+    masteryLevel = Math.min(5, Math.floor(masteryLevel + (quality >= 4 ? 1 : quality === 3 ? 0.5 : 0)));
   }
 
   // 3. Prevent stagnation

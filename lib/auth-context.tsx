@@ -55,8 +55,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       if (res.ok) {
         const data = await res.json()
-        setUser(data.user)
-        localStorage.setItem('user', JSON.stringify(data.user))
+        if (data.user) {
+          setUser(data.user)
+          localStorage.setItem('user', JSON.stringify(data.user))
+        }
       } else {
         localStorage.removeItem('token')
         localStorage.removeItem('user')
@@ -64,10 +66,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch {
       localStorage.removeItem('token')
+      localStorage.removeItem('user')
       setToken(null)
     } finally {
       setLoading(false)
     }
+  }
+
+  function setSession(token: string, userData: User) {
+    localStorage.setItem('token', token)
+    localStorage.setItem('user', JSON.stringify(userData))
+    document.cookie = `token=${token}; path=/; max-age=${604800}; SameSite=Lax`
+    setToken(token)
+    setUser(userData)
   }
 
   async function refreshUser() {
@@ -80,19 +91,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error)
-    
-    const token = data.token
-    const userData = data.user
-    
-    localStorage.setItem('token', token)
-    localStorage.setItem('user', JSON.stringify(userData))
-    
-    document.cookie = `token=${token}; path=/; max-age=${604800}; SameSite=Lax`
-    
-    setToken(token)
-    setUser(userData)
+    const data = await res.json().catch(() => ({ error: 'Invalid server response' }))
+    if (!res.ok) throw new Error(data.error || 'Login failed')
+
+    if (!data.token || !data.user) throw new Error('Invalid server response')
+    setSession(data.token, data.user)
   }
 
   async function register(email: string, password: string, name?: string) {
@@ -101,25 +104,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, name }),
     })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error)
-    
-    const token = data.token
-    const userData = data.user
-    
-    localStorage.setItem('token', token)
-    localStorage.setItem('user', JSON.stringify(userData))
-    
-    document.cookie = `token=${token}; path=/; max-age=${604800}; SameSite=Lax`
-    
-    setToken(token)
-    setUser(userData)
+    const data = await res.json().catch(() => ({ error: 'Invalid server response' }))
+    if (!res.ok) throw new Error(data.error || 'Registration failed')
+
+    if (!data.token || !data.user) throw new Error('Invalid server response')
+    setSession(data.token, data.user)
   }
 
   function logout() {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
-    document.cookie = 'token=; path=/; max-age=0'
+    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax'
     setToken(null)
     setUser(null)
   }

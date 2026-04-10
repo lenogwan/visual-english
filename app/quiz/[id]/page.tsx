@@ -57,18 +57,30 @@ export default function QuizPage() {
     finally { setLoading(false) }
   }
 
+  const [submitting, setSubmitting] = useState(false)
+
   const handleAnswer = (a: string) => { if (!submitted) setAnswers({ ...answers, [currentIndex]: a }) }
   const nextQuestion = () => { if (quiz && currentIndex < quiz.words.length - 1) { setCurrentIndex(c => c + 1); setSelectedImage(null) } }
   const prevQuestion = () => { if (currentIndex > 0) { setCurrentIndex(c => c - 1); setSelectedImage(null) } }
-  const submitQuiz = () => {
-    if (!quiz || !token) return
-    fetch('/api/quiz/attempt', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ quizId: quiz.id, answers: quiz.words.map((_, i) => answers[i] || '') })
-    })
-      .then(r => r.json())
-      .then(d => { setSubmitted(true); setResults(d) })
+  const submitQuiz = async () => {
+    if (!quiz || !token || submitting) return
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/quiz/attempt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ quizId: quiz.id, answers: quiz.words.map((_, i) => answers[i] || '') })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setSubmitted(true)
+        setResults(data)
+      }
+    } catch (error) {
+      console.error('Failed to submit quiz:', error)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const handleDelete = async () => {
@@ -107,8 +119,123 @@ export default function QuizPage() {
         <div className="max-w-2xl mx-auto">
           {/* Main Card */}
           <div className="bg-white rounded-[2.5rem] p-10 border border-indigo-100 shadow-2xl relative mb-12">
-             {/* ... content simplified to fix syntax ... */}
-             <div className="text-center">Quiz Content Rendering...</div>
+            {submitted ? (
+              <div className="text-center">
+                <div className="text-6xl mb-6">🎉</div>
+                <h2 className="text-3xl font-black text-slate-900 mb-4">Quiz Completed!</h2>
+                <p className="text-2xl font-black text-indigo-600 mb-2">
+                  Score: {results?.score || 0} / {results?.total || quiz.words.length}
+                </p>
+                <p className="text-slate-500 mb-8">
+                  Accuracy: {results?.total ? Math.round((results.score / results.total) * 100) : 0}%
+                </p>
+                <button
+                  onClick={() => router.push('/quiz')}
+                  className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700"
+                >
+                  Back to Quizzes
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Progress Bar */}
+                <div className="mb-8">
+                  <div className="flex justify-between text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
+                    <span>Question {currentIndex + 1} of {quiz.words.length}</span>
+                    <span>{Object.keys(answers).length} Answered</span>
+                  </div>
+                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-indigo-600 transition-all duration-300"
+                      style={{ width: `${((currentIndex + 1) / quiz.words.length) * 100}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Word Display */}
+                <div className="text-center mb-8">
+                  <h2 className="text-4xl font-black text-slate-900 mb-2">{currentWord.word}</h2>
+                  {currentWord.phonetic && (
+                    <p className="text-slate-500 font-bold">{currentWord.phonetic}</p>
+                  )}
+                  {currentWord.meaning && (
+                    <p className="text-slate-600 mt-4">{currentWord.meaning}</p>
+                  )}
+                </div>
+
+                {/* Image Display */}
+                {currentWord.images && currentWord.images.length > 0 && (
+                  <div className="mb-8">
+                    <div className="aspect-video rounded-2xl overflow-hidden bg-slate-100">
+                      <img
+                        src={currentWord.images[selectedImage ?? 0]}
+                        alt={currentWord.word}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    {currentWord.images.length > 1 && (
+                      <div className="flex gap-2 mt-4 justify-center">
+                        {currentWord.images.map((_, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setSelectedImage(idx)}
+                            className={`w-3 h-3 rounded-full transition-all ${
+                              (selectedImage ?? 0) === idx ? 'bg-indigo-600' : 'bg-slate-200'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Answer Options (Multiple Choice Example) */}
+                {quiz.type === 'MultipleChoice' && (
+                  <div className="grid gap-4 mb-8">
+                    {['Option A', 'Option B', 'Option C', 'Option D'].map((option, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleAnswer(option)}
+                        className={`p-4 rounded-2xl border-2 font-bold transition-all ${
+                          answers[currentIndex] === option
+                            ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                            : 'border-slate-100 hover:border-indigo-300'
+                        }`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Navigation */}
+                <div className="flex gap-4">
+                  <button
+                    onClick={prevQuestion}
+                    disabled={currentIndex === 0}
+                    className="flex-1 p-4 bg-slate-100 text-slate-600 rounded-2xl font-black disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ← Previous
+                  </button>
+                  {currentIndex < quiz.words.length - 1 ? (
+                    <button
+                      onClick={nextQuestion}
+                      className="flex-1 p-4 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700"
+                    >
+                      Next →
+                    </button>
+                  ) : (
+                    <button
+                      onClick={submitQuiz}
+                      disabled={submitting || Object.keys(answers).length === 0}
+                      className="flex-1 p-4 bg-slate-900 text-white rounded-2xl font-black disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {submitting ? 'Submitting...' : 'Submit Quiz'}
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -15,6 +15,16 @@ export default function PracticePage() {
   const [loading, setLoading] = useState(false)
   const MAX_SESSION = 10
 
+  async function loadNextQuestion(selectedMode: string) {
+      const headers: HeadersInit = token ? { 'Authorization': `Bearer ${token}` } : {}
+      const res = await fetch(`/api/practice/test?mode=${selectedMode}`, { headers })
+      const data = await res.json()
+      setTest(data)
+      setResult(null)
+      setInputValue('')
+      return data
+  }
+
   async function fetchTest(selectedMode: string) {
     setLoading(true)
     setMode(selectedMode as any)
@@ -25,29 +35,22 @@ export default function PracticePage() {
     setLoading(false)
   }
 
-  async function loadNextQuestion(selectedMode: string) {
-      const headers: HeadersInit = token ? { 'Authorization': `Bearer ${token}` } : {}
-      const res = await fetch(`/api/practice/test?mode=${selectedMode}`, { headers })
-      const data = await res.json()
-      setTest(data)
-      setResult(null)
-      setInputValue('')
-  }
-
   const handleAnswer = async (answer: string) => {
-    if (result) return
+    if (result || !test?.correctAnswer) return
     const isCorrect = answer.trim().toLowerCase() === test.correctAnswer.trim().toLowerCase()
     setResult(isCorrect ? 'correct' : 'wrong')
     if (isCorrect) setSessionScore(s => s + 1)
-    
+
     setSessionDetails(prev => [...prev, { word: test.correctAnswer, isCorrect, wordId: test.wordId }])
     setSessionCount(c => c + 1)
 
-    await fetch('/api/progress', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ wordId: test.wordId, quality: isCorrect ? 5 : 1 })
-    })
+    if (token) {
+      await fetch('/api/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ wordId: test.wordId, quality: isCorrect ? 5 : 1 })
+      }).catch(err => console.error('Failed to save progress:', err))
+    }
   }
 
   const playPronunciation = () => {
