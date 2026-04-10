@@ -1,21 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import jwt from 'jsonwebtoken'
-
-const JWT_SECRET = process.env.JWT_SECRET || 'visual-english-secret-key-change-in-production'
-
-async function getAuth(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  if (!authHeader?.startsWith('Bearer ')) return null
-  const token = authHeader.slice(7)
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string }
-    const user = await prisma.user.findUnique({ where: { id: decoded.userId } })
-    return user
-  } catch {
-    return null
-  }
-}
+import { getUserId } from '@/lib/auth-utils'
 
 function safeJsonParse(data: any, fallback: any = []) {
   if (typeof data !== 'string') return data || fallback
@@ -122,8 +107,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await getAuth(request)
-    if (!auth || auth.role?.toLowerCase() !== 'admin') {
+    const userId = await getUserId(request)
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user || user.role?.toLowerCase() !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -201,8 +188,10 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const auth = await getAuth(request)
-    if (!auth || auth.role?.toLowerCase() !== 'admin') {
+    const userId = await getUserId(request)
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user || user.role?.toLowerCase() !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

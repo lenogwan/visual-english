@@ -1,20 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import jwt from 'jsonwebtoken'
+import { getUserId } from '@/lib/auth-utils'
 import { hash, compare } from 'bcryptjs'
-
-const JWT_SECRET = process.env.JWT_SECRET || 'visual-english-secret-key-change-in-production'
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '')
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string }
+    const userId = await getUserId(request)
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     // Use raw query to access settings field (bypasses stale Prisma Client)
     const users: any[] = await prisma.$queryRaw`
-      SELECT "id", "email", "name", "role", "settings" FROM "User" WHERE "id" = ${decoded.userId}
+      SELECT "id", "email", "name", "role", "settings" FROM "User" WHERE "id" = ${userId}
     `
 
     if (!users || users.length === 0) {
@@ -30,15 +26,13 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '')
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string }
+    const userId = await getUserId(request)
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const { name, settings, currentPassword, newPassword } = await request.json()
 
     // Fetch current user with raw query
     const users: any[] = await prisma.$queryRaw`
-      SELECT "id", "email", "name", "role", "password", "settings" FROM "User" WHERE "id" = ${decoded.userId}
+      SELECT "id", "email", "name", "role", "password", "settings" FROM "User" WHERE "id" = ${userId}
     `
     if (!users || users.length === 0) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
@@ -86,7 +80,7 @@ export async function PATCH(request: NextRequest) {
 
     // Execute update with raw query
     const setClause = setClauses.join(', ')
-    values.push(decoded.userId)
+    values.push(userId)
     await prisma.$executeRawUnsafe(
       `UPDATE "User" SET ${setClause} WHERE "id" = $${values.length}`,
       ...values
@@ -94,7 +88,7 @@ export async function PATCH(request: NextRequest) {
 
     // Fetch updated user
     const updatedUsers: any[] = await prisma.$queryRaw`
-      SELECT "id", "email", "name", "role", "settings" FROM "User" WHERE "id" = ${decoded.userId}
+      SELECT "id", "email", "name", "role", "settings" FROM "User" WHERE "id" = ${userId}
     `
 
     return NextResponse.json({ user: updatedUsers[0], message: 'Profile updated successfully' })

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import jwt from 'jsonwebtoken'
-
-const JWT_SECRET = process.env.JWT_SECRET || 'visual-english-secret-key-change-in-production'
+import { getUserId } from '@/lib/auth-utils'
 
 function safeJsonParse(data: any, fallback: any = []) {
   if (typeof data !== 'string') return data || fallback
@@ -19,12 +17,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '')
-    if (!token) {
+    const userId = await getUserId(request)
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    jwt.verify(token, JWT_SECRET) as { userId: string }
     const body = await request.json()
     const { id } = await params
 

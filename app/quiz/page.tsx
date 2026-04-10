@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
+import { useRequireAuth } from '@/lib/use-require-auth'
 import { useRouter } from 'next/navigation'
 import { hasRole } from '@/lib/auth-utils'
 
@@ -33,11 +34,7 @@ export default function QuizListPage() {
   const { user, token } = useAuth()
   const router = useRouter()
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login')
-    }
-  }, [user, loading])
+  useRequireAuth()
 
   useEffect(() => {
     if (user) {

@@ -15,10 +15,12 @@ interface AuthContextType {
   user: User | null
   token: string | null
   loading: boolean
+  sessionExpired: boolean
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, name?: string) => Promise<void>
   logout: () => void
   refreshUser: () => Promise<void>
+  clearSessionExpired: () => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -27,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [sessionExpired, setSessionExpired] = useState(false)
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token')
@@ -60,6 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.setItem('user', JSON.stringify(data.user))
         }
       } else {
+        // Token is invalid or expired
+        if (user) setSessionExpired(true) // Only show toast if user was previously logged in
         localStorage.removeItem('token')
         localStorage.removeItem('user')
         setToken(null)
@@ -71,6 +76,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false)
     }
+  }
+
+  function clearSessionExpired() {
+    setSessionExpired(false)
   }
 
   function setSession(token: string, userData: User) {
@@ -115,13 +124,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax'
+    setSessionExpired(false)
     setToken(null)
     setUser(null)
   }
 
   const value = useMemo(
-    () => ({ user, token, loading, login, register, logout, refreshUser }),
-    [user, token, loading]
+    () => ({ user, token, loading, sessionExpired, login, register, logout, refreshUser, clearSessionExpired }),
+    [user, token, loading, sessionExpired]
   )
 
   return (

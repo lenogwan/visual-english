@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
+import { useRequireStaff } from '@/lib/use-require-auth'
 import { useRouter } from 'next/navigation'
 
 interface Word {
@@ -28,13 +29,7 @@ export default function CreateQuizPage() {
   const { user, token } = useAuth()
   const router = useRouter()
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login')
-    } else if (user && (user.role?.toLowerCase() !== 'admin' && user.role?.toLowerCase() !== 'teacher')) {
-      router.push('/')
-    }
-  }, [user, loading])
+  useRequireStaff()
 
   useEffect(() => {
     fetchWords()

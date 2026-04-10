@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
+import { useRequireAuth } from '@/lib/use-require-auth'
 import { useRouter, useParams } from 'next/navigation'
 
 interface Word {
@@ -39,9 +40,7 @@ export default function QuizPage() {
   const router = useRouter()
   const params = useParams()
 
-  useEffect(() => {
-    if (!loading && !user) router.push('/login')
-  }, [user, loading])
+  useRequireAuth()
 
   useEffect(() => {
     if (user && params.id) fetchQuiz()

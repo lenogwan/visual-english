@@ -1,21 +1,15 @@
 'use client'
 
 import Dashboard from '@/components/Dashboard'
-import { useAuth } from '@/lib/auth-context'
-import Link from 'next/link'
+import { useRequireAuth } from '@/lib/use-require-auth'
 
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user, loading } = useRequireAuth()
 
-  if (!user) {
+  if (loading || !user) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="bg-white rounded-[3rem] p-16 text-center border border-indigo-100 shadow-xl max-w-lg">
-          <div className="text-6xl mb-6">📊</div>
-          <h2 className="text-3xl font-black text-slate-900 mb-4 tracking-tighter uppercase">Dashboard</h2>
-          <p className="text-slate-500 font-medium mb-8">Please log in to see your personalized learning dashboard.</p>
-          <Link href="/login" className="inline-block px-10 py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 transition-all shadow-lg tracking-widest">LOGIN</Link>
-        </div>
+        <div className="w-16 h-16 border-4 border-indigo-400/20 border-t-indigo-600 rounded-full animate-spin"></div>
       </div>
     )
   }

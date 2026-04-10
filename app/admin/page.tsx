@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '@/lib/auth-context'
+import { useRequireStaff } from '@/lib/use-require-auth'
 import { useRouter } from 'next/navigation'
 
 interface Word {
@@ -207,19 +208,7 @@ export default function AdminPage() {
   const isStaff = user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'teacher'
   const isAdmin = user?.role?.toLowerCase() === 'admin'
 
-  useEffect(() => {
-    if (loading) return
-
-    console.log('User role:', user?.role)
-    console.log('Is Staff:', isStaff)
-
-    if (!user) {
-      router.push('/login')
-    } else if (!isStaff) {
-      console.log('Access denied, redirecting to home')
-      router.push('/')
-    }
-  }, [user, loading, router, isStaff])
+  useRequireStaff()
 
   useEffect(() => {
     if (!user || (user.role !== 'admin' && user.role !== 'Admin' && user.role !== 'Teacher' && user.role !== 'teacher')) return

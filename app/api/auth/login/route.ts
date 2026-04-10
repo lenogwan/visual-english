@@ -3,7 +3,11 @@ import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'visual-english-secret-key-change-in-production'
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET
+  if (!secret) throw new Error('JWT_SECRET is not set')
+  return secret
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,9 +27,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
-    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' })
+    const secret = getJwtSecret()
+    const token = jwt.sign({ userId: user.id, role: user.role }, secret, { expiresIn: '7d' })
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       user: {
         id: user.id,
         email: user.email,
@@ -36,16 +41,6 @@ export async function POST(request: NextRequest) {
       },
       token,
     })
-
-    response.cookies.set('token', token, {
-      httpOnly: false,
-      secure: false,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 604800,
-    })
-
-    return response
   } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

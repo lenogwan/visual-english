@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
+import { useRequireAuth } from '@/lib/use-require-auth'
 
 export default function ProfilePage() {
   const { user, token } = useAuth()
+  const { loading: authLoading } = useRequireAuth()
   
   // Profile state
   const [name, setName] = useState('')
@@ -58,10 +60,10 @@ export default function ProfilePage() {
 
     if (token) {
       loadProfile()
-    } else {
+    } else if (!authLoading) {
       setLoading(false)
     }
-  }, [token])
+  }, [token, authLoading])
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import SessionExpiredToast from "@/components/SessionExpiredToast";
 import { AuthProvider } from "@/lib/auth-context";
 import OnboardingWrapper from "@/components/OnboardingWrapper";
 
@@ -68,6 +69,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <AuthProvider>
           <Navbar />
+          <SessionExpiredToast />
           <OnboardingWrapper>
             <main className="flex-1">{children}</main>
           </OnboardingWrapper>

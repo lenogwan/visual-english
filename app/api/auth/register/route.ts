@@ -1,26 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getUserId } from '@/lib/auth-utils'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'visual-english-secret-key-change-in-production'
-
-async function getAuth(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  if (!authHeader?.startsWith('Bearer ')) return null
-  const token = authHeader.slice(7)
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string }
-    const user = await prisma.user.findUnique({ where: { id: decoded.userId } })
-    return user
-  } catch {
-    return null
-  }
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET
+  if (!secret) throw new Error('JWT_SECRET is not set')
+  return secret
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await getAuth(request)
+    const userId = await getUserId(request)
     const { email, password, name, role } = await request.json()
 
     if (!email || !password) {
@@ -33,11 +25,14 @@ export async function POST(request: NextRequest) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10)
-    
+
     // Only admin can create users with specific roles
     let userRole = 'User'
-    if (auth && auth.role === 'Admin' && role) {
-      userRole = role
+    if (userId && role) {
+      const admin = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } })
+      if (admin?.role === 'Admin') {
+        userRole = role
+      }
     }
 
     const user = await prisma.user.create({
@@ -57,8 +52,8 @@ export async function POST(request: NextRequest) {
     })
 
     // If not admin creating, just return user without token
-    if (!auth) {
-      const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' })
+    if (!userId) {
+      const token = jwt.sign({ userId: user.id, role: user.role }, getJwtSecret(), { expiresIn: '7d' })
       return NextResponse.json({ user, token })
     }
 

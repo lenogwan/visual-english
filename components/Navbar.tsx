@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
+import { isStaff } from '@/lib/auth-utils'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -87,7 +88,7 @@ export default function Navbar() {
 
             {user ? (
               <div className="flex items-center gap-4 relative" ref={userMenuRef}>
-                {(user.role === 'Admin' || user.role === 'admin' || user.role === 'Teacher' || user.role === 'teacher') && (
+                {isStaff(user) && (
                   <Link href="/admin" className="hidden lg:block px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl font-bold hover:bg-indigo-100 transition-colors">
                     Admin
                   </Link>

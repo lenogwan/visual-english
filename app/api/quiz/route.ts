@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import jwt from 'jsonwebtoken'
-
-const JWT_SECRET = 'visual-english-secret-key-change-in-production'
+import { getUserId } from '@/lib/auth-utils'
 
 async function getAuth(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  if (!authHeader?.startsWith('Bearer ')) return null
-  const token = authHeader.slice(7)
+  const userId = await getUserId(request)
+  if (!userId) return null
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string }
-    const user = await prisma.user.findUnique({ where: { id: decoded.userId } })
+    const user = await prisma.user.findUnique({ where: { id: userId } })
     return user
   } catch {
     return null

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '@/lib/auth-context'
+import { useRequireAuth } from '@/lib/use-require-auth'
 import Link from 'next/link'
 
 interface Word {
@@ -13,14 +14,15 @@ interface Word {
 
 export default function LibraryPage() {
   const { token } = useAuth()
+  const { user, loading: authLoading } = useRequireAuth()
   const [words, setWords] = useState<Word[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!token) {
-      setLoading(false)
+    if (authLoading || !token) {
+      if (!authLoading) setLoading(false)
       return
     }
     fetch('/api/words/learned', { headers: { 'Authorization': `Bearer ${token}` } })

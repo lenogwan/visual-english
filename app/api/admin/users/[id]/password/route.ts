@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import jwt from 'jsonwebtoken'
+import { getUserId } from '@/lib/auth-utils'
 import { hash } from 'bcryptjs'
-
-const JWT_SECRET = process.env.JWT_SECRET || 'visual-english-secret-key-change-in-production'
 
 export async function POST(
   request: NextRequest,
@@ -11,17 +9,10 @@ export async function POST(
 ) {
   try {
     const { id } = await params
-    const token = request.headers.get('authorization')?.replace('Bearer ', '')
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const userId = await getUserId(request)
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    let decoded: any;
-    try {
-      decoded = jwt.verify(token, JWT_SECRET)
-    } catch {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
-    }
-
-    const adminUser = await prisma.user.findUnique({ where: { id: decoded.userId } })
+    const adminUser = await prisma.user.findUnique({ where: { id: userId } })
     if (!adminUser || (adminUser.role.toLowerCase() !== 'admin' && adminUser.role.toLowerCase() !== 'teacher')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
