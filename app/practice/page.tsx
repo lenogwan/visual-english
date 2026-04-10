@@ -82,7 +82,7 @@ export default function PracticePage() {
       </div>
   )
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center font-black">Charging Neural Engine...</div>
+  if (loading || !test) return <div className="min-h-screen flex items-center justify-center font-black">Charging Neural Engine...</div>
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
@@ -94,7 +94,7 @@ export default function PracticePage() {
             </div>
         </div>
         
-        <p className="text-xl font-bold text-slate-400 mb-8">{test?.question}</p>
+        <p className="text-xl font-bold text-slate-400 mb-8">{test?.question || 'Loading question...'}</p>
         
         {mode === 'spelling' ? (
           <div className="space-y-6">
@@ -111,13 +111,13 @@ export default function PracticePage() {
                 <button onClick={() => handleAnswer(inputValue)} className="w-full p-6 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 transition-all">Submit</button>
             ) : (
                 <div className={`p-6 rounded-2xl font-black text-center ${result === 'correct' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {result === 'correct' ? 'CORRECT!' : `WRONG! Answer was: ${test.correctAnswer}`}
+                    {result === 'correct' ? 'CORRECT!' : `WRONG! Answer was: ${test?.correctAnswer || 'N/A'}`}
                 </div>
             )}
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4">
-            {test?.options.map((opt: string, i: number) => (
+            {test?.options?.map((opt: string, i: number) => (
               <button
                 key={i}
                 onClick={() => handleAnswer(opt)}
