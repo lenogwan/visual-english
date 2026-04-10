@@ -13,7 +13,7 @@ async function getUserId(request: NextRequest): Promise<string | null> {
   } catch { return null }
 }
 
-import { calculateSRS } from '@/lib/srs'
+import { calculateSRS, SRSQuality } from '@/lib/srs'
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     // Quality: 1 (Again) to 5 (Easy)
     const { wordId, quality } = await request.json()
 
-    if (!wordId || typeof quality !== 'number') {
+    if (!wordId || typeof quality !== 'number' || quality < 1 || quality > 5) {
       return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 })
     }
 
@@ -34,8 +34,8 @@ export async function POST(request: NextRequest) {
 
     // 2. SRS calculation
     const prev = await prisma.userProgress.findUnique({ where: { userId_wordId: { userId, wordId } } })
-    
-    const { interval, easeFactor, masteryLevel, nextReviewDate, timesReviewed } = calculateSRS(quality, {
+
+    const { interval, easeFactor, masteryLevel, nextReviewDate, timesReviewed } = calculateSRS(quality as SRSQuality, {
       interval: prev?.interval || 0,
       easeFactor: prev?.easeFactor || 2.5,
       masteryLevel: prev?.masteryLevel || 0,
