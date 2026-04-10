@@ -5,23 +5,33 @@ import { useState, useEffect } from 'react'
 import OnboardingModal from './OnboardingModal'
 
 export default function OnboardingWrapper({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth() // Assume refreshUser exists or we need to handle it
   const [show, setShow] = useState(false)
 
   useEffect(() => {
-    if (user && user.settings) {
+    if (user && user.role === 'User') {
         try {
-            const settings = JSON.parse(user.settings)
-            if (!settings.initialized) setShow(true)
-        } catch { setShow(true) }
-    } else if (user) {
-        setShow(true)
+            const settings = user.settings ? JSON.parse(user.settings) : {}
+            // Only show if NOT initialized
+            if (!settings.initialized) {
+                setShow(true)
+            }
+        } catch (e) {
+            // If JSON parse fails, treat as not initialized
+            setShow(true)
+        }
     }
   }, [user])
 
+  const handleComplete = async () => {
+    setShow(false)
+    if (refreshUser) await refreshUser() // Refresh local user context to pick up new settings
+    window.location.reload() // Force UI sync
+  }
+
   return (
     <>
-      {show && <OnboardingModal onComplete={() => setShow(false)} />}
+      {show && <OnboardingModal onComplete={handleComplete} />}
       {children}
     </>
   )
