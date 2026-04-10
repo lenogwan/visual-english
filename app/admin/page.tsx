@@ -203,18 +203,19 @@ export default function AdminPage() {
   }
   const router = useRouter()
 
+  // Unified role check
+  const isStaff = user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'teacher'
+  const isAdmin = user?.role?.toLowerCase() === 'admin'
+
   useEffect(() => {
     if (loading) return
 
     if (!user) {
       router.push('/login')
-    } else {
-      const role = user.role?.toLowerCase()
-      if (role !== 'admin' && role !== 'teacher') {
-        router.push('/')
-      }
+    } else if (!isStaff) {
+      router.push('/')
     }
-  }, [user, loading, router])
+  }, [user, loading, router, isStaff])
 
   useEffect(() => {
     if (!user || (user.role !== 'admin' && user.role !== 'Admin' && user.role !== 'Teacher' && user.role !== 'teacher')) return
