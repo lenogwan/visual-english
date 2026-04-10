@@ -18,6 +18,7 @@ model User {
   
   // Gamification Fields
   xp              Int               @default(0)
+  level           Int               @default(1)
   streakCount     Int               @default(0)
   streakFreezes   Int               @default(1)
   lastActiveDate  DateTime?

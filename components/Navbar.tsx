@@ -5,6 +5,8 @@ import { useAuth } from '@/lib/auth-context'
 import { isStaff } from '@/lib/auth-utils'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import XPBar from '@/components/ui/XPBar'
+import StreakBadge from '@/components/ui/StreakBadge'
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -113,9 +115,16 @@ export default function Navbar() {
 
                 {userMenuOpen && (
                   <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-xl border border-indigo-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200 z-[60]">
-                    <div className="px-4 py-2 border-b border-slate-50 mb-1">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Signed in as</p>
+                    <div className="px-4 py-3 border-b border-slate-50 mb-1 flex flex-col gap-2">
+                      <div className="flex justify-between items-center">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Signed in as</p>
+                      </div>
                       <p className="text-xs font-semibold text-slate-600 truncate">{user.email}</p>
+                      
+                      <div className="flex justify-between items-center pt-1">
+                        <XPBar xp={user.xp || 0} level={user.level || 1} />
+                        <StreakBadge streak={user.streakCount || 0} freezes={user.streakFreezes || 0} />
+                      </div>
                     </div>
                     {(user.role === 'Admin' || user.role === 'admin' || user.role === 'Teacher' || user.role === 'teacher') && (
                       <Link 

@@ -9,9 +9,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No token provided' }, { status: 401 })
     }
 
-    // Use raw query to include settings (bypasses stale Prisma Client)
+    // Use raw query to include settings and gamification fields
     const users: any[] = await prisma.$queryRaw`
-      SELECT "id", "email", "name", "role", "settings", "createdAt" FROM "User" WHERE "id" = ${userId}
+      SELECT "id", "email", "name", "role", "settings", "xp", "level", "streakCount", "streakFreezes", "createdAt" FROM "User" WHERE "id" = ${userId}
     `
 
     if (!users || users.length === 0) {

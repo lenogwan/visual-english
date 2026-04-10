@@ -9,6 +9,12 @@ interface User {
   role: string // "Admin", "Teacher", "User"
   settings?: string | null // JSON string of preferences
   createdAt: string
+  
+  // Gamification Fields
+  xp?: number
+  level?: number
+  streakCount?: number
+  streakFreezes?: number
 }
 
 interface AuthContextType {
