@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
+import { speak } from '@/lib/speech'
 
 export default function PracticePage() {
   const { token } = useAuth()
@@ -64,10 +65,8 @@ export default function PracticePage() {
   }
 
   const playPronunciation = () => {
-    if ('speechSynthesis' in window && test?.correctAnswer) {
-      const utterance = new SpeechSynthesisUtterance(test.correctAnswer)
-      utterance.lang = 'en-US'
-      window.speechSynthesis.speak(utterance)
+    if (test?.correctAnswer) {
+      speak(test.correctAnswer)
     }
   }
 

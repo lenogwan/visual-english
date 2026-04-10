@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useFavorites } from '@/lib/favorites-context'
 import UnsplashImage from '@/components/UnsplashImage'
 import SenseSwitcher from '@/components/SenseSwitcher'
+import { speak } from '@/lib/speech'
 
 interface TriadCardProps {
   word: WordData | {
@@ -70,23 +71,13 @@ export default function TriadCard({ word: initialWord, onNext, onPrev }: TriadCa
 
   const playPronunciation = (e: React.MouseEvent) => {
     e.stopPropagation()
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(currentSense.word)
-      utterance.lang = 'en-US'
-      utterance.rate = 0.8
-      speechSynthesis.speak(utterance)
-    }
+    speak(currentSense.word)
   }
 
   const playFeelIt = (e: React.MouseEvent) => {
     e.stopPropagation()
     const text = currentSense.emotionalConnection || `A vivid mental picture of ${currentSense.word} in action.`
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = 'en-US'
-      utterance.rate = 0.85
-      speechSynthesis.speak(utterance)
-    }
+    speak(text)
   }
 
   const rawPos = Array.isArray(currentSense.partOfSpeech) ? currentSense.partOfSpeech[0] : currentSense.partOfSpeech;

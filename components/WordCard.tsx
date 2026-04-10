@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { useFavorites } from '@/lib/favorites-context'
 import UnsplashImage from '@/components/UnsplashImage'
+import { speak } from '@/lib/speech'
 
 interface WordCardProps {
   id: string
@@ -35,10 +36,7 @@ export default function WordCard({ id, word, phonetic, meaning, scenario, exampl
   }
 
   const playSound = (text: string) => {
-    if ('speechSynthesis' in window) {
-      const u = new SpeechSynthesisUtterance(text)
-      window.speechSynthesis.speak(u)
-    }
+    speak(text)
   }
 
   // Ensure examples are correctly parsed if they arrive as JSON strings
