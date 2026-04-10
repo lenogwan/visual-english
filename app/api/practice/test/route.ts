@@ -16,22 +16,27 @@ async function getUserId(request: NextRequest): Promise<string | null> {
 export async function GET(request: NextRequest) {
   try {
     const userId = await getUserId(request)
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     const { searchParams } = new URL(request.url)
-    const mode = searchParams.get('mode') || 'meaning' // meaning, spelling, scenario
+    const mode = searchParams.get('mode') || 'meaning'
 
-    const progress = await prisma.userProgress.findMany({
-      where: { userId, learned: true },
-      include: { word: true },
-      take: 50
-    })
-
-    if (progress.length === 0) return NextResponse.json({ error: 'No learned words' }, { status: 404 })
-
-    const randomIndex = Math.floor(Math.random() * progress.length)
-    const p = progress[randomIndex]
-    const word = p.word
+    let word: any
+    
+    if (userId) {
+        const progress = await prisma.userProgress.findMany({
+            where: { userId, learned: true },
+            include: { word: true },
+            take: 50
+        })
+        if (progress.length > 0) {
+            word = progress[Math.floor(Math.random() * progress.length)].word
+        }
+    }
+    
+    if (!word) {
+        const count = await prisma.word.count()
+        const skip = Math.floor(Math.random() * count)
+        word = (await prisma.word.findMany({ take: 1, skip }))[0]
+    }
 
     let response = { wordId: word.id, mode } as any
 
