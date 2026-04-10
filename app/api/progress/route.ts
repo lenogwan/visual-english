@@ -13,6 +13,8 @@ async function getUserId(request: NextRequest): Promise<string | null> {
   } catch { return null }
 }
 
+import { calculateSRS } from '@/lib/srs'
+
 export async function POST(request: NextRequest) {
   try {
     const userId = await getUserId(request)
@@ -33,24 +35,12 @@ export async function POST(request: NextRequest) {
     // 2. SRS calculation
     const prev = await prisma.userProgress.findUnique({ where: { userId_wordId: { userId, wordId } } })
     
-    let interval = prev?.interval || 0
-    let easeFactor = prev?.easeFactor || 2.5
-    let masteryLevel = prev?.masteryLevel || 0
-
-    if (quality < 3) {
-      interval = 0
-      masteryLevel = Math.max(0, masteryLevel - 1)
-    } else {
-      if (interval === 0) interval = 1
-      else if (interval === 1) interval = 6
-      else interval = Math.round(interval * easeFactor)
-      
-      easeFactor = Math.max(1.3, easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)))
-      masteryLevel = Math.min(5, masteryLevel + 1)
-    }
-
-    const nextReviewDate = new Date()
-    nextReviewDate.setDate(nextReviewDate.getDate() + interval)
+    const { interval, easeFactor, masteryLevel, nextReviewDate, timesReviewed } = calculateSRS(quality, {
+      interval: prev?.interval || 0,
+      easeFactor: prev?.easeFactor || 2.5,
+      masteryLevel: prev?.masteryLevel || 0,
+      timesReviewed: prev?.timesReviewed || 0
+    })
 
     const progress = await prisma.userProgress.upsert({
       where: { userId_wordId: { userId, wordId } },
@@ -60,14 +50,14 @@ export async function POST(request: NextRequest) {
         masteryLevel,
         nextReviewDate,
         lastReviewedAt: new Date(),
-        timesReviewed: { increment: 1 },
+        timesReviewed,
         learned: true
       },
       create: {
         userId, wordId,
         interval, easeFactor, masteryLevel, nextReviewDate,
         lastReviewedAt: new Date(),
-        timesReviewed: 1, learned: true
+        timesReviewed, learned: true
       }
     })
 

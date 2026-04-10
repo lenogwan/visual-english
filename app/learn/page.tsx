@@ -59,7 +59,13 @@ function LearnContent() {
         />
         
         <SRSController 
-           wordId={queue[currentIndex].id} 
+           wordId={queue[currentIndex].id}
+           currentState={queue[currentIndex].progress ? {
+             interval: queue[currentIndex].progress.interval,
+             easeFactor: queue[currentIndex].progress.easeFactor,
+             masteryLevel: queue[currentIndex].progress.masteryLevel,
+             timesReviewed: queue[currentIndex].progress.timesReviewed
+           } : undefined}
            onGrade={handleGrade} 
         />
       </div>
