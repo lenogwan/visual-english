@@ -216,10 +216,9 @@ export default function ProfilePage() {
                     <label className="text-xs font-black text-slate-800 uppercase tracking-widest">Daily Word Goal</label>
                     <select
                       value={dailyGoal}
-                      onChange={(e) => setDailyGoal(e.target.value)}
+                      onChange={(e) => setDailyGoal(Number(e.target.value))}
                       className="w-full p-4 bg-white border-2 border-indigo-50 rounded-xl focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-400/10 text-slate-900 font-bold transition-all shadow-sm cursor-pointer appearance-none"
-                    >
-                      <option value="10">10 Words / day (Casual)</option>
+                    >                      <option value="10">10 Words / day (Casual)</option>
                       <option value="20">20 Words / day (Steady)</option>
                       <option value="50">50 Words / day (Intensive)</option>
                       <option value="100">100 Words / day (Extreme)</option>
