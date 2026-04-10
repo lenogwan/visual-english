@@ -29,10 +29,14 @@ export async function GET(request: NextRequest) {
       prisma.word.count()
     ])
 
+    const totalMasterySum = await prisma.userProgress.aggregate({
+        where: { userId, learned: true },
+        _sum: { masteryLevel: true }
+    })
+
     const settings = stats?.settings ? JSON.parse(stats.settings) : {}
     const dailyGoal = parseInt(settings.dailyGoal || '20')
     
-    // Logic: calculate achievements on the fly
     const calculatedAchievements = []
     if (learnedCount >= 50) calculatedAchievements.push({ slug: 'pioneer', title: 'Learning Pioneer' })
     if (masteredCount >= 50) calculatedAchievements.push({ slug: 'master-50', title: 'Master 50' })
@@ -49,12 +53,16 @@ export async function GET(request: NextRequest) {
         .slice(0, 5)
         .map(([word, count]) => ({ word, count }))
 
+    const masteryScore = learnedCount > 0 
+        ? Math.round(((totalMasterySum._sum.masteryLevel || 0) / (learnedCount * 5)) * 100) 
+        : 0
+
     return NextResponse.json({
         dailyGoal,
         totalLearned: learnedCount,
         totalWords,
         accuracy: history.length ? Math.round((history.filter(h => h.isCorrect).length / history.length) * 100) : 100,
-        masteryScore: totalWords ? Math.round((masteredCount / totalWords) * 100) : 0,
+        masteryScore,
         refinementWords,
         achievements: calculatedAchievements,
         trend: Array.from({ length: 30 }).map((_, i) => {

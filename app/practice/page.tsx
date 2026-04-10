@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
 
 export default function PracticePage() {
@@ -8,6 +8,7 @@ export default function PracticePage() {
   const [test, setTest] = useState<any>(null)
   const [sessionCount, setSessionCount] = useState(0)
   const [sessionScore, setSessionScore] = useState(0)
+  const [sessionDetails, setSessionDetails] = useState<any[]>([])
   const [mode, setMode] = useState<'meaning' | 'scenario' | 'spelling' | null>(null)
   const [result, setResult] = useState<'correct' | 'wrong' | null>(null)
   const [inputValue, setInputValue] = useState('')
@@ -20,6 +21,7 @@ export default function PracticePage() {
     setMode(selectedMode as any)
     setSessionCount(0)
     setSessionScore(0)
+    setSessionDetails([])
     await loadNextQuestion(selectedMode)
     setLoading(false)
   }
@@ -37,6 +39,8 @@ export default function PracticePage() {
     const isCorrect = answer.trim().toLowerCase() === test.correctAnswer.trim().toLowerCase()
     setResult(isCorrect ? 'correct' : 'wrong')
     if (isCorrect) setSessionScore(s => s + 1)
+    
+    setSessionDetails(prev => [...prev, { word: test.correctAnswer, isCorrect, wordId: test.wordId }])
     setSessionCount(c => c + 1)
 
     await fetch('/api/progress', {
@@ -73,11 +77,23 @@ export default function PracticePage() {
 
   if (sessionCount >= MAX_SESSION) return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 animate-fadeIn">
-        <div className="bg-white p-12 rounded-[3rem] shadow-2xl border border-indigo-50 text-center max-w-lg w-full">
-            <div className="text-8xl mb-8">🎖️</div>
+        <div className="bg-white p-12 rounded-[3rem] shadow-2xl border border-indigo-50 max-w-2xl w-full">
             <h2 className="text-4xl font-black text-slate-900 mb-2">Session Complete!</h2>
             <p className="text-slate-500 font-bold text-sm uppercase tracking-widest mb-10">Accuracy: {Math.round((sessionScore / MAX_SESSION) * 100)}%</p>
-            <button onClick={() => setMode(null)} className="w-full p-6 bg-slate-900 text-white rounded-2xl font-black hover:bg-indigo-600 transition-all">Back to Arena</button>
+            
+            <div className="space-y-3 mb-10 max-h-60 overflow-y-auto">
+                {sessionDetails.map((d, i) => (
+                    <div key={i} className={`flex justify-between p-4 rounded-xl font-bold ${d.isCorrect ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                        <span>{d.word}</span>
+                        <span>{d.isCorrect ? '✓' : '✗'}</span>
+                    </div>
+                ))}
+            </div>
+
+            <div className="flex gap-4">
+                <button onClick={() => fetchTest(mode)} className="flex-1 p-5 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700">Continue Next Practice</button>
+                <button onClick={() => setMode(null)} className="flex-1 p-5 bg-slate-100 text-slate-600 rounded-2xl font-black hover:bg-slate-200">Return to Arena</button>
+            </div>
         </div>
       </div>
   )
