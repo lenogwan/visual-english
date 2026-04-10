@@ -107,7 +107,7 @@ export default function CreateQuizPage() {
   if (createdQuiz) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="bg-white rounded-[3rem] p-12 shadow-2xl border border-indigo-100 max-w-lg w-full text-center relative overflow-hidden">
+        <div className="bg-white rounded-[2.5rem] p-12 shadow-2xl border border-indigo-100 max-w-lg w-full text-center relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-2 bg-indigo-600"></div>
           <div className="text-6xl mb-8">🎉</div>
           <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight uppercase">Quiz Ready</h2>
@@ -241,7 +241,7 @@ export default function CreateQuizPage() {
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 font-black">🔍</span>
               </div>
 
-              <div className="flex flex-wrap gap-2 max-h-96 overflow-y-auto p-4 bg-slate-50/50 rounded-[2rem] border border-slate-100 custom-scrollbar">
+              <div className="flex flex-wrap gap-2 max-h-96 overflow-y-auto p-4 bg-slate-50/50 rounded-[2.5rem] border border-slate-100 custom-scrollbar">
                 {filteredWords.map((word) => (
                   <button
                     key={word.id}

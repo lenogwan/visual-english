@@ -151,7 +151,7 @@ export default function QuizListPage() {
           <section>
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-8 ml-2">Managed Quizzes</h3>
             {quizzes.length === 0 ? (
-              <div className="bg-slate-100/50 rounded-[3rem] p-16 text-center border-2 border-dashed border-slate-200">
+              <div className="bg-slate-100/50 rounded-[2.5rem] p-16 text-center border-2 border-dashed border-slate-200">
                 <p className="text-slate-400 font-bold italic uppercase tracking-widest text-xs">
                   You haven't created any quizzes yet.
                 </p>
@@ -162,7 +162,7 @@ export default function QuizListPage() {
                   <div
                     key={quiz.id}
                     onClick={() => router.push(`/quiz/${quiz.id}`)}
-                    className="bg-white group rounded-[3rem] p-10 border border-slate-100 shadow-xl hover:shadow-2xl hover:translate-y-[-6px] transition-all duration-500 cursor-pointer relative overflow-hidden"
+                    className="bg-white group rounded-[2.5rem] p-10 border border-slate-100 shadow-xl hover:shadow-2xl hover:translate-y-[-6px] transition-all duration-500 cursor-pointer relative overflow-hidden"
                   >
                     <div className="flex justify-between items-start mb-6">
                       <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Entry Code: <span className="text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">{(quiz as any).entryPassword}</span></span>

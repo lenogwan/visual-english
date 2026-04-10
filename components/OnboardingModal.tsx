@@ -25,7 +25,7 @@ export default function OnboardingModal({ onComplete }: { onComplete: () => void
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xl flex items-center justify-center z-[100] p-6">
-      <div className="bg-white p-12 rounded-[3rem] shadow-2xl max-w-lg w-full text-center">
+      <div className="bg-white p-12 rounded-[2.5rem] shadow-2xl max-w-lg w-full text-center">
         <h2 className="text-4xl font-black text-slate-900 mb-6">Welcome to Visual English</h2>
         <p className="text-slate-500 mb-10">Let's set your learning baseline.</p>
         

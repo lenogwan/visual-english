@@ -92,7 +92,7 @@ export default function Dashboard() {
 
         {/* Mid Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col items-center justify-center relative overflow-hidden group">
+            <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col items-center justify-center relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-bl-[4rem] -z-10 group-hover:scale-110 transition-transform" />
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Mastery Health</h3>
                 <div className="text-6xl font-black text-indigo-600 mb-2">{stats.masteryScore}%</div>
@@ -102,7 +102,7 @@ export default function Dashboard() {
                 </Link>
             </div>
 
-            <div className="md:col-span-2 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col">
+            <div className="md:col-span-2 bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col">
                 <div className="flex justify-between items-start mb-6">
                     <div>
                         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">30-Day Activity Trend</h3>
@@ -140,7 +140,7 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+            <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
                 <h3 className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-6">● Refinement Zone</h3>
                 {stats.refinementWords.map((w: any, i: number) => (
                     <div key={i} className="flex justify-between items-center p-4 bg-red-50 rounded-2xl mb-2">
@@ -150,7 +150,7 @@ export default function Dashboard() {
                 ))}
             </div>
             
-            <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+            <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
                 <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-6">♥ My Favorites</h3>
                 <div className="flex flex-wrap gap-2">
                     {favorites.map((w) => (
@@ -160,7 +160,7 @@ export default function Dashboard() {
             </div>
         </div>
 
-        <section className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden relative group">
+        <section className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden relative group">
             <div className="flex justify-between items-center mb-8">
                 <div>
                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Knowledge Library</h3>

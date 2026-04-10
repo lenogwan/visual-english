@@ -78,7 +78,7 @@ export default function PracticePage() {
         {[{m: 'meaning', l: 'Meaning Recall', d: 'Connect concepts'}, 
           {m: 'scenario', l: 'Scenario Match', d: 'Apply in context'}, 
           {m: 'spelling', l: 'Phonetic Spelling', d: 'Perfect your ear'}].map(opt => (
-          <button key={opt.m} onClick={() => fetchTest(opt.m)} className="p-12 bg-white rounded-[3rem] shadow-xl border border-indigo-50 hover:shadow-2xl hover:scale-[1.02] hover:-translate-y-2 transition-all text-left group">
+          <button key={opt.m} onClick={() => fetchTest(opt.m)} className="p-12 bg-white rounded-[2.5rem] shadow-xl border border-indigo-50 hover:shadow-2xl hover:scale-[1.02] hover:-translate-y-2 transition-all text-left group">
             <div className="text-4xl mb-6">🎯</div>
             <h3 className="text-xl font-black text-slate-900 mb-1 tracking-tight">{opt.l}</h3>
             <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">{opt.d}</p>
@@ -90,7 +90,7 @@ export default function PracticePage() {
 
   if (sessionCount >= MAX_SESSION) return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 animate-fadeIn">
-        <div className="bg-white p-12 rounded-[3rem] shadow-2xl border border-indigo-50 max-w-2xl w-full">
+        <div className="bg-white p-12 rounded-[2.5rem] shadow-2xl border border-indigo-50 max-w-2xl w-full">
             <h2 className="text-4xl font-black text-slate-900 mb-2">Session Complete!</h2>
             <p className="text-slate-500 font-bold text-sm uppercase tracking-widest mb-10">Accuracy: {Math.round((sessionScore / MAX_SESSION) * 100)}%</p>
             
@@ -127,7 +127,7 @@ export default function PracticePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
-      <div className="max-w-2xl w-full bg-white p-12 rounded-[3rem] shadow-2xl border border-indigo-50 animate-fadeIn">
+      <div className="max-w-2xl w-full bg-white p-12 rounded-[2.5rem] shadow-2xl border border-indigo-50 animate-fadeIn">
         <div className="flex justify-between items-center mb-10">
             <button onClick={() => setMode(null)} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-indigo-600 transition-colors">← Quit Arena</button>
             <div className="flex-1 ml-8 h-2 bg-slate-100 rounded-full overflow-hidden">

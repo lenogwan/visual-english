@@ -45,7 +45,7 @@ export default function WordCard({ id, word, phonetic, meaning, scenario, exampl
   const parsedExamples = typeof examples === 'string' ? JSON.parse(examples) : (Array.isArray(examples) ? examples : [])
 
   return (
-    <div className="bg-white rounded-[3rem] shadow-2xl border border-indigo-50 p-12 max-w-5xl mx-auto flex flex-col md:flex-row gap-12">
+    <div className="bg-white rounded-[2.5rem] shadow-2xl border border-indigo-50 p-12 max-w-5xl mx-auto flex flex-col md:flex-row gap-12">
       <div className="md:w-1/2 space-y-8">
         <div className="rounded-[2.5rem] overflow-hidden aspect-square shadow-xl">
             <UnsplashImage word={word} alt={word} className="w-full h-full object-cover" fallbackUrl={images[0]} />

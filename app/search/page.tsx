@@ -140,7 +140,7 @@ function SearchContent() {
     return (
       <div className="min-h-[80vh] bg-slate-50 flex items-center justify-center px-6 text-center">
         <div className="max-w-xl w-full">
-          <div className="w-24 h-24 bg-white rounded-[2rem] shadow-xl shadow-indigo-100 flex items-center justify-center mx-auto mb-10 border border-indigo-50">
+          <div className="w-24 h-24 bg-white rounded-[2.5rem] shadow-xl shadow-indigo-100 flex items-center justify-center mx-auto mb-10 border border-indigo-50">
             <svg className="w-10 h-10 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
@@ -153,7 +153,7 @@ function SearchContent() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search visual english..."
-              className="w-full p-6 bg-white border-2 border-indigo-100 rounded-[2rem] focus:border-indigo-400 focus:outline-none text-xl font-bold pr-36 shadow-2xl"
+              className="w-full p-6 bg-white border-2 border-indigo-100 rounded-[2.5rem] focus:border-indigo-400 focus:outline-none text-xl font-bold pr-36 shadow-2xl"
             />
             <button type="submit" className="absolute right-3 top-3 bottom-3 px-8 bg-indigo-600 text-white rounded-[1.5rem] font-black text-xs hover:bg-indigo-700 transition-all">SEARCH</button>
           </form>
@@ -242,7 +242,7 @@ function SearchContent() {
         <div className="flex gap-2 mb-10 bg-indigo-50/50 rounded-[2.5rem] p-2 border border-indigo-100 max-w-sm mx-auto shadow-inner">
           <button 
             onClick={() => setActiveTab('card')}
-            className={`flex-1 py-4 rounded-[2rem] font-black text-[11px] tracking-widest uppercase text-center transition-all ${
+            className={`flex-1 py-4 rounded-[2.5rem] font-black text-[11px] tracking-widest uppercase text-center transition-all ${
               activeTab === 'card' ? 'bg-indigo-600 text-white shadow-lg' : 'text-indigo-400 hover:text-indigo-600'
             }`}
           >
@@ -250,7 +250,7 @@ function SearchContent() {
           </button>
           <button 
             onClick={() => setActiveTab('study')}
-            className={`flex-1 py-4 rounded-[2rem] font-black text-[11px] tracking-widest uppercase text-center transition-all ${
+            className={`flex-1 py-4 rounded-[2.5rem] font-black text-[11px] tracking-widest uppercase text-center transition-all ${
               activeTab === 'study' ? 'bg-indigo-600 text-white shadow-lg' : 'text-indigo-400 hover:text-indigo-600'
             }`}
           >
@@ -276,8 +276,8 @@ function SearchContent() {
                 emotionalConnection={currentSense.emotionalConnection}
               />
               <div className="flex justify-between mt-6 px-6">
-                <button onClick={handlePrev} className="px-8 py-4 bg-white/50 backdrop-blur-md text-slate-500 rounded-[2rem] font-black text-[10px] tracking-widest hover:bg-white hover:text-slate-800 transition-all border border-slate-200/50 shadow-sm uppercase flex items-center gap-2">← Prev</button>
-                <button onClick={handleNext} className="px-8 py-4 bg-indigo-600 text-white rounded-[2rem] font-black text-[10px] tracking-widest hover:bg-indigo-500 hover:shadow-2xl transition-all shadow-xl uppercase flex items-center gap-2">Next →</button>
+                <button onClick={handlePrev} className="px-8 py-4 bg-white/50 backdrop-blur-md text-slate-500 rounded-[2.5rem] font-black text-[10px] tracking-widest hover:bg-white hover:text-slate-800 transition-all border border-slate-200/50 shadow-sm uppercase flex items-center gap-2">← Prev</button>
+                <button onClick={handleNext} className="px-8 py-4 bg-indigo-600 text-white rounded-[2.5rem] font-black text-[10px] tracking-widest hover:bg-indigo-500 hover:shadow-2xl transition-all shadow-xl uppercase flex items-center gap-2">Next →</button>
               </div>
             </div>
           )}

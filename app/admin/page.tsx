@@ -1164,7 +1164,7 @@ export default function AdminPage() {
                     <button
                       onClick={updateWord}
                       disabled={saving}
-                      className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[2rem] font-bold text-sm tracking-wide shadow-lg hover:shadow-xl active:scale-95 transition-all disabled:opacity-50 mt-8"
+                      className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[2.5rem] font-bold text-sm tracking-wide shadow-lg hover:shadow-xl active:scale-95 transition-all disabled:opacity-50 mt-8"
                     >
                       {saving ? 'Updating...' : 'Update Word'}
                     </button>
@@ -1448,7 +1448,7 @@ export default function AdminPage() {
         {/* Add Modal */}
         {showAddModal && activeTab === 'words' && (
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
-            <div className="bg-white/95 rounded-[3rem] p-10 border border-indigo-100 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar relative">
+            <div className="bg-white/95 rounded-[2.5rem] p-10 border border-indigo-100 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar relative">
               <button
                 onClick={() => { resetAddForm(); setShowAddModal(false); }}
                 className="absolute top-8 right-8 text-slate-400 hover:text-indigo-600 transition-colors"
@@ -1653,7 +1653,7 @@ export default function AdminPage() {
         {/* Add User Modal */}
         {showAddUserModal && (
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
-            <div className="bg-white/95 rounded-[3rem] p-12 border border-indigo-100 shadow-2xl max-w-md w-full relative overflow-hidden">
+            <div className="bg-white/95 rounded-[2.5rem] p-12 border border-indigo-100 shadow-2xl max-w-md w-full relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl -translate-y-16 translate-x-16"></div>
 
               <div className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-4">User Management</div>
@@ -1713,7 +1713,7 @@ export default function AdminPage() {
         {/* Add Quiz Modal */}
         {showAddQuizModal && (
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
-            <div className="bg-white/95 rounded-[3rem] p-10 border border-indigo-100 shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div className="bg-white/95 rounded-[2.5rem] p-10 border border-indigo-100 shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar">
               <div className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-4">Quiz Architecture</div>
               <h2 className="text-5xl font-black text-slate-900 tracking-tighter mb-10">Construct Module</h2>
 
@@ -1761,7 +1761,7 @@ export default function AdminPage() {
                     <span className="text-indigo-600">{quizWordIds.length} Linked</span>
                   </label>
 
-                  <div className="bg-slate-50 border border-indigo-50 rounded-[2rem] p-6 max-h-[400px] overflow-y-auto custom-scrollbar">
+                  <div className="bg-slate-50 border border-indigo-50 rounded-[2.5rem] p-6 max-h-[400px] overflow-y-auto custom-scrollbar">
                     <div className="flex flex-wrap gap-2">
                       {words.map((word) => {
                         const isSelected = quizWordIds.includes(word.id);
@@ -1805,7 +1805,7 @@ export default function AdminPage() {
         {/* Import Confirmation Modal */}
         {showImportModal && (
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-[60] p-4 animate-fadeIn">
-            <div className="bg-white/95 rounded-[3rem] p-12 border border-indigo-100 shadow-2xl max-w-md w-full relative">
+            <div className="bg-white/95 rounded-[2.5rem] p-12 border border-indigo-100 shadow-2xl max-w-md w-full relative">
               <div className="text-[10px] font-black text-pink-500 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
                 <span>📦</span> Ready to Import
               </div>

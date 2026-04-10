@@ -37,7 +37,7 @@ export default function SRSController({ wordId, currentState, onGrade }: SRSCont
               e.stopPropagation();
               onGrade(grade.val);
             }}
-            className={`group relative flex flex-col items-center gap-2 p-5 rounded-[2rem] border border-transparent transition-all hover:scale-105 active:scale-95 ${grade.bgColor} hover:border-indigo-100 hover:shadow-xl hover:shadow-indigo-500/10`}
+            className={`group relative flex flex-col items-center gap-2 p-5 rounded-[2.5rem] border border-transparent transition-all hover:scale-105 active:scale-95 ${grade.bgColor} hover:border-indigo-100 hover:shadow-xl hover:shadow-indigo-500/10`}
           >
             <span className="text-2xl mb-1 group-hover:scale-125 transition-transform">{grade.icon}</span>
             <span className={`font-black text-xs uppercase tracking-[0.2em] ${grade.textColor}`}>
