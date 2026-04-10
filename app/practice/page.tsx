@@ -16,7 +16,6 @@ export default function PracticePage() {
   const MAX_SESSION = 10
 
   async function fetchTest(selectedMode: string) {
-    if (!token) return
     setLoading(true)
     setMode(selectedMode as any)
     setSessionCount(0)
@@ -27,7 +26,8 @@ export default function PracticePage() {
   }
 
   async function loadNextQuestion(selectedMode: string) {
-      const res = await fetch(`/api/practice/test?mode=${selectedMode}`, { headers: { 'Authorization': `Bearer ${token}` } })
+      const headers: HeadersInit = token ? { 'Authorization': `Bearer ${token}` } : {}
+      const res = await fetch(`/api/practice/test?mode=${selectedMode}`, { headers })
       const data = await res.json()
       setTest(data)
       setResult(null)
