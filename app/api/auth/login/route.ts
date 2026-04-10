@@ -5,7 +5,10 @@ import jwt from 'jsonwebtoken'
 
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET
-  if (!secret) throw new Error('JWT_SECRET is not set')
+  if (!secret) {
+    console.warn('WARNING: JWT_SECRET is not set. Using default. Set JWT_SECRET in production for security.')
+    return 'visual-english-secret-key-change-in-production'
+  }
   return secret
 }
 

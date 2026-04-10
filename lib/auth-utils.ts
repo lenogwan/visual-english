@@ -5,11 +5,12 @@ interface User {
   role?: string
 }
 
-// Centralized JWT secret validation - throws if not configured
+// Centralized JWT secret validation
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET
   if (!secret) {
-    throw new Error('JWT_SECRET environment variable is required but not set')
+    console.warn('WARNING: JWT_SECRET is not set. Using default. Set JWT_SECRET in production for security.')
+    return 'visual-english-secret-key-change-in-production'
   }
   return secret
 }

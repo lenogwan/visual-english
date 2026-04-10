@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!)
-
+const JWT_SECRET_STR = process.env.JWT_SECRET || 'visual-english-secret-key-change-in-production'
 if (!process.env.JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required')
+  console.warn('WARNING: JWT_SECRET is not set. Using default. Set JWT_SECRET in production for security.')
 }
+const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_STR)
 
 async function getRoleFromToken(token: string): Promise<string | null> {
   try {

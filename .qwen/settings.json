@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "mcp__github__push_files",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(npm run *)",
+      "Read(C:\\Users\\wanch\\.qwen/**)"
     ]
-  }
+  },
+  "$version": 3
 }
