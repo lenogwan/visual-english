@@ -91,15 +91,18 @@ model PracticeHistory {
 }
 
 model Quiz {
-  id          String        @id @default(cuid())
-  title       String
-  description String?
-  type        String
-  wordIds     String
-  createdById String
-  createdAt   DateTime      @default(now())
-  createdBy   User          @relation(fields: [createdById], references: [id])
-  attempts    QuizAttempt[]
+  id            String        @id @default(cuid())
+  title         String
+  description   String?
+  type          String        @default("MultipleChoice")
+  wordIds       String        // Stored as JSON string array of word IDs
+  entryPassword String        @unique // 6-digit access code
+  isActive      Boolean       @default(true)
+  createdById   String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  createdBy     User          @relation(fields: [createdById], references: [id])
+  attempts      QuizAttempt[]
 }
 
 model QuizAttempt {
@@ -108,6 +111,7 @@ model QuizAttempt {
   userId    String
   score     Int
   total     Int
+  details   Json     @default("[]") // Detailed results for each question
   completed Boolean  @default(false)
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

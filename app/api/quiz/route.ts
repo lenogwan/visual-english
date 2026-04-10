@@ -52,7 +52,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const auth = await getAuth(request)
-    if (!auth || auth.role === 'User') {
+    const role = auth?.role?.toLowerCase()
+    if (!auth || (role !== 'admin' && role !== 'teacher')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -63,17 +64,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Title, type and at least one word are required' }, { status: 400 })
     }
 
+    // Generate a unique 6-digit entry password
+    let entryPassword = ''
+    let isUnique = false
+    while (!isUnique) {
+      entryPassword = Math.floor(100000 + Math.random() * 900000).toString()
+      const existing = await prisma.quiz.findUnique({ where: { entryPassword } })
+      if (!existing) isUnique = true
+    }
+
     const quiz = await prisma.quiz.create({
       data: {
         title,
         description: description || null,
-        type,
+        type: type || 'MultipleChoice',
         wordIds: JSON.stringify(wordIds),
+        entryPassword,
+        isActive: true,
         createdById: auth.id,
       },
     })
 
-    return NextResponse.json({ success: true, quiz: { ...quiz, wordIds } })
+    return NextResponse.json({ 
+      success: true, 
+      quiz: { ...quiz, wordIds: JSON.parse(quiz.wordIds) } 
+    })
   } catch (error) {
     console.error('Create quiz error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

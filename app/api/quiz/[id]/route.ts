@@ -30,13 +30,23 @@ export async function GET(
     const { id } = await params
     const quiz = await prisma.quiz.findUnique({
       where: { id },
-      include: { createdBy: { select: { id: true, name: true, email: true } } },
+      include: { 
+        createdBy: { select: { id: true, name: true, email: true } },
+        attempts: {
+          include: { user: { select: { id: true, name: true, email: true } } },
+          orderBy: { createdAt: 'desc' }
+        }
+      },
     })
 
     if (!quiz) {
       return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
     }
 
+    // Authorization: Only creator or admin can see attempts/analysis
+    const role = auth.role?.toLowerCase()
+    const isAuthorized = role === 'admin' || quiz.createdById === auth.id
+    
     const wordIds: string[] = JSON.parse(quiz.wordIds)
     const words = await prisma.word.findMany({
       where: { id: { in: wordIds } },
@@ -45,10 +55,12 @@ export async function GET(
     return NextResponse.json({
       ...quiz,
       wordIds,
+      attempts: isAuthorized ? quiz.attempts : [],
+      isAuthorized,
       words: words.map(w => ({
         ...w,
-        images: JSON.parse(w.images),
-        scenarioImages: JSON.parse(w.scenarioImages),
+        images: typeof w.images === 'string' ? JSON.parse(w.images) : w.images,
+        scenarioImages: typeof w.scenarioImages === 'string' ? JSON.parse(w.scenarioImages) : w.scenarioImages,
       })),
     })
   } catch (error) {

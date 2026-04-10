@@ -39,25 +39,27 @@ export async function POST(request: NextRequest) {
     const wordIds: string[] = JSON.parse(quiz.wordIds)
     const words = await prisma.word.findMany({ where: { id: { in: wordIds } } })
 
-    let score = 0
     const results = words.map((word, idx) => {
       const userAnswer = answers[idx] || ''
-      const correct = userAnswer.toLowerCase() === word.word.toLowerCase()
+      const correct = userAnswer.toLowerCase().trim() === word.word.toLowerCase().trim()
       if (correct) score++
       return { wordId: word.id, word: word.word, userAnswer, correct }
     })
 
-    await prisma.quizAttempt.create({
+    const attempt = await prisma.quizAttempt.create({
       data: {
         quizId,
         userId: auth.id,
         score,
         total: words.length,
+        details: results,
         completed: true,
       },
     })
 
     return NextResponse.json({
+      success: true,
+      attemptId: attempt.id,
       score,
       total: words.length,
       percentage: Math.round((score / words.length) * 100),
