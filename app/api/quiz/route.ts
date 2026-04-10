@@ -120,8 +120,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
     }
 
-    if (role !== 'admin' && quiz.createdById !== auth.id) {
-      return NextResponse.json({ error: 'You can only delete your own quizzes' }, { status: 403 })
+    // Authorization: Admin or Owner only
+    const isOwner = quiz.createdById === auth.id
+    const isAdmin = auth.role?.toLowerCase() === 'admin'
+    
+    if (!isAdmin && !isOwner) {
+      return NextResponse.json({ error: 'Forbidden: You can only delete your own quizzes' }, { status: 403 })
     }
 
     // Delete related quiz attempts first

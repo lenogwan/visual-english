@@ -158,23 +158,43 @@ export default function QuizPage() {
   })
 
   const hardestWords = Object.values(wordAnalysis)
-    .sort((a, b) => (a.correct / a.total) - (b.correct / b.total))
-    .slice(0, 3)
+    const isCreator = user && (user.id === quiz.createdBy.id || user.role?.toLowerCase() === 'admin')
 
-  return (
-    <div className="min-h-screen bg-slate-50 py-12 px-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-10">
-          <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">{quiz?.title}</h1>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Quiz Engine v2.0 • Code: {(quiz as any).entryPassword}</p>
+    const handleDelete = async () => {
+      if (!confirm('Are you sure you want to delete this quiz?')) return
+      try {
+        const res = await fetch(`/api/quiz?id=${quiz.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (res.ok) router.push('/quiz')
+        else alert('Failed to delete quiz')
+      } catch (err) { console.error(err) }
+    }
+
+    return (
+      <div className="min-h-screen bg-slate-50 py-12 px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex justify-between items-center mb-10">
+            <div>
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight">{quiz?.title}</h1>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Quiz Engine v2.0 • Code: {(quiz as any).entryPassword}</p>
+            </div>
+            <div className="flex gap-2">
+              {isCreator && (
+                <>
+                  <button onClick={() => router.push(`/quiz/edit/${quiz.id}`)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-black uppercase tracking-widest transition-all">Edit</button>
+                  <button onClick={handleDelete} className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-black uppercase tracking-widest transition-all">Delete</button>
+                </>
+              )}
+              <button 
+                onClick={() => router.push('/quiz')} 
+                className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-500 rounded-xl text-xs font-black uppercase tracking-widest border border-indigo-100 transition-all font-bold"
+              >
+                ← QUIT
+              </button>
+            </div>
           </div>
-          <button 
-            onClick={() => router.push('/quiz')} 
-            className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-500 rounded-xl text-xs font-black uppercase tracking-widest border border-indigo-100 transition-all font-bold"
-          >
-            ← QUIT
-          </button>
         </div>
 
         <div className="max-w-2xl mx-auto">
