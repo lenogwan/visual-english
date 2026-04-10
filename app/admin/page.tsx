@@ -208,8 +208,11 @@ export default function AdminPage() {
 
     if (!user) {
       router.push('/login')
-    } else if (user.role !== 'admin' && user.role !== 'Admin' && user.role !== 'Teacher' && user.role !== 'teacher') {
-      router.push('/')
+    } else {
+      const role = user.role?.toLowerCase()
+      if (role !== 'admin' && role !== 'teacher') {
+        router.push('/')
+      }
     }
   }, [user, loading, router])
 
