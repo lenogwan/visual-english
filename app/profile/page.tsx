@@ -3,10 +3,15 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { useRequireAuth } from '@/lib/use-require-auth'
+import { useToast } from '@/components/ui/Toast'
+import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
+import Card from '@/components/ui/Card'
 
 export default function ProfilePage() {
   const { user, token } = useAuth()
   const { loading: authLoading } = useRequireAuth()
+  const { addToast } = useToast()
   
   // Profile state
   const [name, setName] = useState('')
@@ -26,8 +31,6 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [savingSettings, setSavingSettings] = useState(false)
   const [savingPassword, setSavingPassword] = useState(false)
-  const [message, setMessage] = useState({ text: '', type: '' })
-  const [passwordMessage, setPasswordMessage] = useState({ text: '', type: '' })
 
   useEffect(() => {
     async function loadProfile() {
@@ -68,7 +71,6 @@ export default function ProfilePage() {
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault()
     setSavingSettings(true)
-    setMessage({ text: '', type: '' })
 
     try {
       const res = await fetch('/api/user/profile', {
@@ -90,12 +92,12 @@ export default function ProfilePage() {
 
       const data = await res.json()
       if (res.ok) {
-        setMessage({ text: 'Profile and preferences updated successfully.', type: 'success' })
+        addToast('Profile and preferences updated successfully.', 'success')
       } else {
-        setMessage({ text: data.error || 'Failed to update profile.', type: 'error' })
+        addToast(data.error || 'Failed to update profile.', 'error')
       }
     } catch (err) {
-      setMessage({ text: 'An unexpected error occurred.', type: 'error' })
+      addToast('An unexpected error occurred.', 'error')
     } finally {
       setSavingSettings(false)
     }
@@ -103,20 +105,19 @@ export default function ProfilePage() {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
-    setPasswordMessage({ text: '', type: '' })
 
     if (!currentPassword) {
-      setPasswordMessage({ text: 'Please enter your current password.', type: 'error' })
+      addToast('Please enter your current password.', 'error')
       return
     }
 
     if (newPassword !== confirmPassword) {
-      setPasswordMessage({ text: 'New passwords do not match.', type: 'error' })
+      addToast('New passwords do not match.', 'error')
       return
     }
 
     if (newPassword.length < 6) {
-      setPasswordMessage({ text: 'Password must be at least 6 characters.', type: 'error' })
+      addToast('Password must be at least 6 characters.', 'error')
       return
     }
 
@@ -137,15 +138,15 @@ export default function ProfilePage() {
 
       const data = await res.json()
       if (res.ok) {
-        setPasswordMessage({ text: 'Password changed successfully.', type: 'success' })
+        addToast('Password changed successfully.', 'success')
         setCurrentPassword('')
         setNewPassword('')
         setConfirmPassword('')
       } else {
-        setPasswordMessage({ text: data.error || 'Failed to change password.', type: 'error' })
+        addToast(data.error || 'Failed to change password.', 'error')
       }
     } catch (err) {
-      setPasswordMessage({ text: 'An unexpected error occurred.', type: 'error' })
+      addToast('An unexpected error occurred.', 'error')
     } finally {
       setSavingPassword(false)
     }
@@ -171,33 +172,26 @@ export default function ProfilePage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* General & Preferences */}
           <div className="md:col-span-2 space-y-8">
-            <div className="bg-white rounded-[2rem] p-8 border border-indigo-100 shadow-xl relative overflow-hidden">
+            <Card>
               <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
                 <span className="text-2xl">👤</span> Personal Details
               </h2>
-              
-              <form onSubmit={handleSaveProfile} className="space-y-6 relative z-10">
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest">Email Address</label>
-                  <input
-                    type="email"
-                    value={email}
-                    disabled
-                    className="w-full p-4 bg-slate-50 border-2 border-slate-100/50 rounded-xl text-slate-400 font-medium cursor-not-allowed"
-                  />
-                  <p className="text-[10px] text-slate-400 italic">Email associated with your account cannot be changed.</p>
-                </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-800 uppercase tracking-widest">Display Name</label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your name"
-                    className="w-full p-4 bg-white border-2 border-indigo-50 rounded-xl focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-400/10 text-slate-900 transition-all font-medium shadow-sm"
-                  />
-                </div>
+              <form onSubmit={handleSaveProfile} className="space-y-6">
+                <Input
+                  label="Email Address"
+                  value={email}
+                  disabled
+                  className="bg-slate-50 border-slate-100/50 text-slate-400 cursor-not-allowed"
+                  helper="Email associated with your account cannot be changed."
+                />
+
+                <Input
+                  label="Display Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Enter your name"
+                />
 
                 <hr className="border-indigo-50" />
 
@@ -207,7 +201,7 @@ export default function ProfilePage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-800 uppercase tracking-widest">Target English Level</label>
+                    <label className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Target English Level</label>
                     <select
                       value={englishLevel}
                       onChange={(e) => setEnglishLevel(e.target.value)}
@@ -223,12 +217,13 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-800 uppercase tracking-widest">Daily Word Goal</label>
+                    <label className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Daily Word Goal</label>
                     <select
                       value={dailyGoal}
                       onChange={(e) => setDailyGoal(Number(e.target.value))}
                       className="w-full p-4 bg-white border-2 border-indigo-50 rounded-xl focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-400/10 text-slate-900 font-bold transition-all shadow-sm cursor-pointer appearance-none"
-                    >                      <option value="10">10 Words / day (Casual)</option>
+                    >
+                      <option value="10">10 Words / day (Casual)</option>
                       <option value="20">20 Words / day (Steady)</option>
                       <option value="50">50 Words / day (Intensive)</option>
                       <option value="100">100 Words / day (Extreme)</option>
@@ -236,7 +231,7 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="space-y-2 sm:col-span-2">
-                    <label className="text-xs font-black text-slate-800 uppercase tracking-widest">Native / Helper Language</label>
+                    <label className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Native / Helper Language</label>
                     <select
                       value={nativeLanguage}
                       onChange={(e) => setNativeLanguage(e.target.value)}
@@ -250,87 +245,54 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {message.text && (
-                  <div className={`p-4 rounded-xl text-sm font-bold ${
-                    message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'
-                  }`}>
-                    {message.text}
-                  </div>
-                )}
-
                 <div className="pt-4">
-                  <button
-                    type="submit"
-                    disabled={savingSettings}
-                    className="w-full py-4 bg-indigo-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-50"
-                  >
+                  <Button type="submit" isLoading={savingSettings} size="lg" className="w-full">
                     {savingSettings ? 'Saving Profile...' : 'Save Profile & Settings'}
-                  </button>
+                  </Button>
                 </div>
               </form>
-            </div>
+            </Card>
           </div>
 
           {/* Security */}
           <div className="md:col-span-1 border-t md:border-t-0 pt-8 md:pt-0">
-            <div className="bg-white rounded-[2rem] p-8 border border-red-50 shadow-xl">
+            <Card className="border-red-50">
               <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
                 <span className="text-2xl">🔐</span> Security
               </h2>
 
               <form onSubmit={handleChangePassword} className="space-y-5">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Current Password</label>
-                  <input
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    required
-                    className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-xl focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-400/10 text-slate-900 transition-all shadow-sm text-sm"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">New Password</label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                    className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-xl focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-400/10 text-slate-900 transition-all shadow-sm text-sm"
-                  />
-                </div>
+                <Input
+                  type="password"
+                  label="Current Password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  required
+                />
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Confirm New</label>
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    className="w-full p-4 bg-slate-50 border-2 border-indigo-50 rounded-xl focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-400/10 text-slate-900 transition-all shadow-sm text-sm"
-                  />
-                </div>
+                <Input
+                  type="password"
+                  label="New Password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                />
 
-                {passwordMessage.text && (
-                  <div className={`p-4 rounded-xl text-xs font-bold leading-relaxed ${
-                    passwordMessage.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-                  }`}>
-                    {passwordMessage.text}
-                  </div>
-                )}
+                <Input
+                  type="password"
+                  label="Confirm New"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
 
                 <div className="pt-2">
-                  <button
-                    type="submit"
-                    disabled={savingPassword}
-                    className="w-full py-4 bg-slate-800 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-all shadow-lg shadow-slate-200 disabled:opacity-50"
-                  >
+                  <Button type="submit" variant="secondary" isLoading={savingPassword} size="lg" className="w-full bg-slate-800 text-white hover:bg-slate-900 border-slate-800 hover:border-slate-900">
                     {savingPassword ? 'Updating...' : 'Change Password'}
-                  </button>
+                  </Button>
                 </div>
               </form>
-            </div>
+            </Card>
           </div>
         </div>
       </div>

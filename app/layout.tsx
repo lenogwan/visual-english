@@ -3,6 +3,8 @@ import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import SessionExpiredToast from "@/components/SessionExpiredToast";
+import Footer from "@/components/Footer";
+import { ToastProvider } from "@/components/ui/Toast";
 import { AuthProvider } from "@/lib/auth-context";
 import { FavoritesProvider } from "@/lib/favorites-context";
 import OnboardingWrapper from "@/components/OnboardingWrapper";
@@ -68,15 +70,18 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <AuthProvider>
-          <FavoritesProvider>
-            <Navbar />
-            <SessionExpiredToast />
-            <OnboardingWrapper>
-              <main className="flex-1">{children}</main>
-            </OnboardingWrapper>
-          </FavoritesProvider>
-        </AuthProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <FavoritesProvider>
+              <Navbar />
+              <SessionExpiredToast />
+              <OnboardingWrapper>
+                <main className="flex-1">{children}</main>
+              </OnboardingWrapper>
+              <Footer />
+            </FavoritesProvider>
+          </AuthProvider>
+        </ToastProvider>
       </body>
     </html>
   );
