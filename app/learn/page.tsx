@@ -12,10 +12,10 @@ function LearnContent() {
   const [loading, setLoading] = useState(true)
 
   async function fetchQueue() {
-    if (!token) return
     try {
       setLoading(true)
-      const res = await fetch('/api/learn/queue', { headers: { 'Authorization': `Bearer ${token}` } })
+      const headers: HeadersInit = token ? { 'Authorization': `Bearer ${token}` } : {}
+      const res = await fetch('/api/learn/queue', { headers })
       const data = await res.json()
       setQueue(data.queue || [])
     } catch (err) { console.error(err) } finally { setLoading(false) }
@@ -24,15 +24,17 @@ function LearnContent() {
   useEffect(() => { fetchQueue() }, [token])
 
   const handleGrade = async (quality: number) => {
-    if (!token || !queue[currentIndex]) return
-    try {
-      await fetch('/api/progress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ wordId: queue[currentIndex].id, quality })
-      })
-      setCurrentIndex(prev => prev + 1)
-    } catch (err) { console.error(err) }
+    if (!queue[currentIndex]) return
+    if (token) {
+        try {
+          await fetch('/api/progress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ wordId: queue[currentIndex].id, quality })
+          })
+        } catch (err) { console.error(err) }
+    }
+    setCurrentIndex(prev => prev + 1)
   }
 
   if (loading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div></div>
