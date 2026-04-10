@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import OnboardingModal from './OnboardingModal'
 
 export default function OnboardingWrapper({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const [show, setShow] = useState(false)
 
   useEffect(() => {
@@ -22,9 +22,9 @@ export default function OnboardingWrapper({ children }: { children: React.ReactN
     }
   }, [user])
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     setShow(false)
-    window.location.reload()
+    await refreshUser() // Smooth sync
   }
 
   return (

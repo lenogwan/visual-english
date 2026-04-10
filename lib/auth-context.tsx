@@ -18,6 +18,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, name?: string) => Promise<void>
   logout: () => void
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -40,7 +41,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem('user')
         }
       }
-      // Proactively verify the session with the server
       fetchUser(storedToken)
     } else {
       setLoading(false)
@@ -56,8 +56,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (res.ok) {
         const data = await res.json()
         setUser(data.user)
+        localStorage.setItem('user', JSON.stringify(data.user))
       } else {
         localStorage.removeItem('token')
+        localStorage.removeItem('user')
         setToken(null)
       }
     } catch {
@@ -68,12 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  function setCookie(token: string) {
-    document.cookie = `token=${token}; path=/; max-age=${604800}; SameSite=Lax; Secure=false`
-  }
-
-  function removeCookie() {
-    document.cookie = 'token=; path=/; max-age=0; SameSite=Lax'
+  async function refreshUser() {
+    if (token) await fetchUser(token)
   }
 
   async function login(email: string, password: string) {
@@ -91,7 +89,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('token', token)
     localStorage.setItem('user', JSON.stringify(userData))
     
-    // Set cookie for middleware
     document.cookie = `token=${token}; path=/; max-age=${604800}; SameSite=Lax`
     
     setToken(token)
@@ -113,7 +110,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('token', token)
     localStorage.setItem('user', JSON.stringify(userData))
     
-    // Set cookie for middleware
     document.cookie = `token=${token}; path=/; max-age=${604800}; SameSite=Lax`
     
     setToken(token)
@@ -129,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )
