@@ -43,7 +43,7 @@ export default function ProfilePage() {
             try {
               const parsedSettings = JSON.parse(data.user.settings)
               if (parsedSettings.englishLevel) setEnglishLevel(parsedSettings.englishLevel)
-              if (parsedSettings.dailyGoal) setDailyGoal(parsedSettings.dailyGoal)
+              if (parsedSettings.dailyGoal) setDailyGoal(Number(parsedSettings.dailyGoal))
               if (parsedSettings.nativeLanguage) setNativeLanguage(parsedSettings.nativeLanguage)
             } catch (e) {
               console.error('Failed to parse settings')
@@ -77,7 +77,8 @@ export default function ProfilePage() {
           settings: {
             englishLevel,
             dailyGoal,
-            nativeLanguage
+            nativeLanguage,
+            initialized: true
           }
         })
       })
