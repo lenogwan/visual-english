@@ -4,17 +4,19 @@ import { prisma } from '@/lib/db'
 export async function POST(request: NextRequest) {
   try {
     const { entryPassword } = await request.json()
+    const sanitizedPassword = entryPassword?.toString().trim()
 
-    if (!entryPassword || entryPassword.length !== 6) {
+    if (!sanitizedPassword || sanitizedPassword.length !== 6) {
       return NextResponse.json({ error: 'Valid 6-digit password is required' }, { status: 400 })
     }
 
     const quiz = await prisma.quiz.findUnique({
-      where: { entryPassword },
+      where: { entryPassword: sanitizedPassword },
       select: { id: true, title: true, isActive: true }
     })
 
     if (!quiz) {
+      console.log('Quiz not found for password:', sanitizedPassword)
       return NextResponse.json({ error: 'Quiz not found. Please check your password.' }, { status: 404 })
     }
 

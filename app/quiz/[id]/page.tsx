@@ -48,9 +48,13 @@ export default function QuizPage() {
 
   async function fetchQuiz() {
     try {
-      const res = await fetch(`/api/quiz/${params.id}`)
+      const res = await fetch(`/api/quiz/${params.id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      })
       const data = await res.json()
+      console.log('Fetched quiz data:', data)
       if (data.error) {
+        console.error('Quiz fetch error:', data.error)
         router.push('/quiz')
       } else {
         setQuiz(data)
