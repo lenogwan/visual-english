@@ -28,6 +28,7 @@ export default function Navbar() {
     { name: 'Learn', href: '/learn' },
     { name: 'Quizzes', href: '/quiz', auth: true },
     { name: 'Practice', href: '/practice' },
+    { name: 'Library', href: '/library' },
   ]
 
   return (

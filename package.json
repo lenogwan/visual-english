@@ -7,13 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "db:seed": "npx tsx prisma/seed.ts",
     "db:init-admin": "npx tsx prisma/init-admin.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@libsql/client": "^0.8.0",
-    "@prisma/adapter-libsql": "^5.22.0",
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.2",
@@ -25,15 +25,20 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4.3.4",
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
+    "jsdom": "^26.0.0",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.0.5"
   }
 }
