@@ -136,7 +136,7 @@ export default function QuizPage() {
   const currentWord = quiz.words[currentIndex]
 
   // Analysis logic for Teacher/Admin
-  const isCreator = user && (user.id === quiz.createdById || user.role === 'Admin' || user.role === 'admin')
+  const isCreator = user && (user.id === quiz.createdBy.id || user.role === 'Admin' || user.role === 'admin')
   const attempts = (quiz as any).attempts || []
   const avgScore = attempts.length > 0 ? (attempts.reduce((acc: number, curr: any) => acc + curr.score, 0) / attempts.length).toFixed(1) : 0
   
