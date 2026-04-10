@@ -19,7 +19,10 @@ export default function LibraryPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!token) return
+    if (!token) {
+      setLoading(false)
+      return
+    }
     fetch('/api/words/learned', { headers: { 'Authorization': `Bearer ${token}` } })
       .then(r => {
         if (!r.ok) throw new Error('Failed to fetch words')

@@ -29,7 +29,6 @@ export default function ProfilePage() {
 
   useEffect(() => {
     async function loadProfile() {
-      if (!token) return
       try {
         const res = await fetch('/api/user/profile', {
           headers: { Authorization: `Bearer ${token}` }
@@ -38,7 +37,7 @@ export default function ProfilePage() {
         if (data.user) {
           setName(data.user.name || '')
           setEmail(data.user.email || '')
-          
+
           if (data.user.settings) {
             try {
               const parsedSettings = JSON.parse(data.user.settings)
@@ -56,8 +55,12 @@ export default function ProfilePage() {
         setLoading(false)
       }
     }
-    
-    if (token) loadProfile()
+
+    if (token) {
+      loadProfile()
+    } else {
+      setLoading(false)
+    }
   }, [token])
 
   const handleSaveProfile = async (e: React.FormEvent) => {

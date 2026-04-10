@@ -48,6 +48,7 @@ model Word {
 
   @@unique([word, senseIndex])
   @@index([level])
+  @@index([word])
 }
 
 model UserProgress {
@@ -67,6 +68,7 @@ model UserProgress {
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, wordId])
+  @@index([userId, learned])
 }
 
 model FavoriteWord {
@@ -88,6 +90,9 @@ model PracticeHistory {
   timestamp DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   word      Word     @relation(fields: [wordId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, timestamp])
 }
 
 model Quiz {
@@ -116,4 +121,7 @@ model QuizAttempt {
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([quizId])
 }

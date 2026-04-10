@@ -33,6 +33,7 @@ function SearchContent() {
   const [hasSearched, setHasSearched] = useState(false)
   const [isSuggestion, setIsSuggestion] = useState(false)
   const [currentSense, setCurrentSense] = useState<Word | null>(null)
+  const [error, setError] = useState<string | null>(null)
   
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -92,6 +93,9 @@ function SearchContent() {
       }
     } catch (error) {
       console.error('Search failed:', error)
+      setError('Search failed. Please check your connection and try again.')
+      setWords([])
+      setCurrentSense(null)
     } finally {
       setLoading(false)
     }
@@ -145,6 +149,17 @@ function SearchContent() {
             <button type="submit" className="absolute right-3 top-3 bottom-3 px-8 bg-indigo-600 text-white rounded-[1.5rem] font-black text-xs hover:bg-indigo-700 transition-all">SEARCH</button>
           </form>
         </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+        <div className="text-6xl mb-6">⚠️</div>
+        <h2 className="text-3xl font-black text-slate-900 mb-3">Search Error</h2>
+        <p className="text-lg text-slate-500 mb-8 max-w-md">{error}</p>
+        <button onClick={() => { setError(null); doSearch(searchQuery) }} className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-colors">Try Again</button>
       </div>
     )
   }

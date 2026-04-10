@@ -13,20 +13,30 @@ export default function PracticePage() {
   const [result, setResult] = useState<'correct' | 'wrong' | null>(null)
   const [inputValue, setInputValue] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const MAX_SESSION = 10
 
   async function loadNextQuestion(selectedMode: string) {
+    try {
+      setError(null)
       const headers: HeadersInit = token ? { 'Authorization': `Bearer ${token}` } : {}
       const res = await fetch(`/api/practice/test?mode=${selectedMode}`, { headers })
+      if (!res.ok) throw new Error('Failed to fetch practice question')
       const data = await res.json()
       setTest(data)
       setResult(null)
       setInputValue('')
       return data
+    } catch (err) {
+      console.error('Practice load failed:', err)
+      setError('Failed to load practice question. Please try again.')
+      return null
+    }
   }
 
   async function fetchTest(selectedMode: string) {
     setLoading(true)
+    setError(null)
     setMode(selectedMode as any)
     setSessionCount(0)
     setSessionScore(0)
@@ -99,6 +109,18 @@ export default function PracticePage() {
             </div>
         </div>
       </div>
+  )
+
+  if (error) return (
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+      <div className="text-6xl mb-6">⚠️</div>
+      <h2 className="text-3xl font-black text-slate-900 mb-3">Practice Error</h2>
+      <p className="text-lg text-slate-500 mb-8 max-w-md">{error}</p>
+      <div className="flex gap-4">
+        <button onClick={() => { setError(null); loadNextQuestion(mode!) }} className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-colors">Try Again</button>
+        <button onClick={() => { setMode(null); setError(null) }} className="px-8 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200">Back to Arena</button>
+      </div>
+    </div>
   )
 
   if (loading || !test) return <div className="min-h-screen flex items-center justify-center font-black">Charging Neural Engine...</div>

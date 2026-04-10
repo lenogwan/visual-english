@@ -10,15 +10,21 @@ function LearnContent() {
   const [queue, setQueue] = useState<any[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   async function fetchQueue() {
     try {
       setLoading(true)
+      setError(null)
       const headers: HeadersInit = token ? { 'Authorization': `Bearer ${token}` } : {}
       const res = await fetch('/api/learn/queue', { headers })
+      if (!res.ok) throw new Error('Failed to fetch learning queue')
       const data = await res.json()
       setQueue(data.queue || [])
-    } catch (err) { console.error(err) } finally { setLoading(false) }
+    } catch (err) {
+      console.error(err)
+      setError('Failed to load your learning queue. Please try again.')
+    } finally { setLoading(false) }
   }
 
   useEffect(() => { fetchQueue() }, [token])
@@ -27,18 +33,28 @@ function LearnContent() {
     if (!queue[currentIndex]) return
     if (token) {
         try {
-          await fetch('/api/progress', {
+          const res = await fetch('/api/progress', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ wordId: queue[currentIndex].id, quality })
           })
-        } catch (err) { console.error(err) }
+          if (!res.ok) throw new Error('Failed to save progress')
+        } catch (err) { console.error('Progress save failed:', err) }
     }
     setCurrentIndex(prev => prev + 1)
   }
 
   if (loading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div></div>
-  
+
+  if (error) return (
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+      <div className="text-6xl mb-6">⚠️</div>
+      <h2 className="text-3xl font-black text-slate-900 mb-3">Queue Load Failed</h2>
+      <p className="text-lg text-slate-500 mb-8 max-w-md">{error}</p>
+      <button onClick={fetchQueue} className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-colors">Try Again</button>
+    </div>
+  )
+
   if (currentIndex >= queue.length) return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <h2 className="text-4xl font-black mb-6">🎉 Daily Goal Completed!</h2>
